@@ -23,6 +23,8 @@ class User(Base):
     weight = Column(Float, nullable=True) # kg
     gender = Column(String(20), nullable=True)
     is_diabetic = Column(Boolean, default=False)
+    email = Column(String(150), unique=True, index=True, nullable=True)
+    is_verified = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     scans = relationship("Scan", back_populates="user", cascade="all, delete-orphan")
@@ -86,6 +88,25 @@ class SavedFood(Base):
 class RegisterRequest(BaseModel):
     username: str
     password: str
+    email: Optional[str] = None
+    verification_code: Optional[str] = None
+
+class SendVerificationRequest(BaseModel):
+    email: str
+
+class SendVerificationResponse(BaseModel):
+    status: str
+    message: str
+    demo_code: Optional[str] = None
+
+class VerifyCodeRequest(BaseModel):
+    email: str
+    code: str
+
+class VerifyCodeResponse(BaseModel):
+    status: str
+    message: str
+    is_valid: bool
 
 class LoginRequest(BaseModel):
     username: str

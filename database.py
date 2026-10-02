@@ -28,3 +28,16 @@ def get_db():
 def init_db():
     """Creates database tables if they do not exist."""
     Base.metadata.create_all(bind=engine)
+    try:
+        with engine.connect() as conn:
+            from sqlalchemy import text
+            res = conn.execute(text("PRAGMA table_info(users)"))
+            cols = [row[1] for row in res.fetchall()]
+            if cols:
+                if "email" not in cols:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN email VARCHAR(150)"))
+                if "is_verified" not in cols:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT 1"))
+                conn.commit()
+    except Exception as e:
+        print(f"Database migration note: {e}")
