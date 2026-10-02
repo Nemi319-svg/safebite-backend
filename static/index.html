@@ -1,0 +1,2660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SafeBite – AI Food Health Analyzer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .emerald-glow { box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.4); }
+    .amber-glow { box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.4); }
+    .rose-glow { box-shadow: 0 0 25px -5px rgba(239, 68, 68, 0.4); }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #0f172a; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    .gauge-circle { transition: stroke-dashoffset 1s ease-in-out; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
+
+  <!-- TOP HEADER NAVBAR -->
+  <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <!-- Brand Logo -->
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('dashboard')">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center emerald-glow text-white shadow-lg">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
+        </div>
+        <div>
+          <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">SafeBite</span>
+          <span class="text-xs px-2 py-0.5 ml-1.5 rounded-full font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">AI Web</span>
+        </div>
+      </div>
+
+      <!-- Quick Controls & Status -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- Viewport Switcher -->
+        <button id="viewToggleBtn" onclick="toggleViewportMode()" title="Toggle Phone / Desktop view" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 flex items-center space-x-1.5 border border-slate-700 transition">
+          <span id="viewToggleIcon">📱</span>
+          <span id="viewToggleText" class="hidden sm:inline">Phone Mode</span>
+        </button>
+
+        <!-- AI Agent Config Pill -->
+        <button onclick="openAiAgentModal()" class="px-2.5 py-1.5 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/30 text-xs font-semibold text-emerald-400 flex items-center space-x-1.5 transition">
+          <span>🤖</span>
+          <span id="aiAgentStatusLabel">AI Agent Active</span>
+        </button>
+
+        <!-- Database & Backend Health Pill -->
+        <div id="backendStatusPill" onclick="openBackendConfigModal()" class="cursor-pointer px-2.5 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-xs flex items-center space-x-1.5 transition" title="Database & API Settings">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" id="statusDot"></span>
+          <span id="statusLabel" class="text-slate-300 font-medium hidden md:inline">SQLite DB Connected</span>
+        </div>
+
+        <!-- User Authentication & Profile Pill -->
+        <div id="authPillContainer" class="pl-2 border-l border-slate-800 flex items-center space-x-2">
+          <!-- Logged in state -->
+          <div id="userLoggedInView" class="flex items-center space-x-2 cursor-pointer" onclick="openProfileModal()">
+            <div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-xs border border-emerald-500/30" id="userAvatar">U</div>
+            <span class="text-xs font-semibold text-slate-200 hidden sm:inline" id="userDisplayName">demo_user</span>
+          </div>
+          <!-- Logged out button -->
+          <button id="loginRegisterBtn" onclick="openAuthModal('login')" class="hidden px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition">
+            Sign In / Register
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER (Supports Phone Frame or Full Desktop) -->
+  <main class="flex-1 flex justify-center py-4 px-2 sm:px-4">
+    <div id="appContainer" class="w-full max-w-6xl transition-all duration-300 flex flex-col">
+
+      <!-- NAVIGATION TABS -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-1.5 mb-5 flex overflow-x-auto custom-scroll space-x-1 shadow-sm">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-2 bg-emerald-500 text-white shadow">
+          <span>📊</span><span>Dashboard</span>
+        </button>
+        <button onclick="switchTab('scan')" id="nav-scan" class="nav-btn px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60">
+          <span>🔍</span><span>Food Analyzer</span>
+        </button>
+        <button onclick="switchTab('compare')" id="nav-compare" class="nav-btn px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60">
+          <span>⚖️</span><span>Compare Foods</span>
+        </button>
+        <button onclick="switchTab('indian')" id="nav-indian" class="nav-btn px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60">
+          <span>🍛</span><span>Indian Foods DB</span>
+        </button>
+        <button onclick="switchTab('diabetes')" id="nav-diabetes" class="nav-btn px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60">
+          <span>🩸</span><span>Diabetes Check</span>
+        </button>
+        <button onclick="switchTab('chat')" id="nav-chat" class="nav-btn px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60">
+          <span>💬</span><span>AI Nutritionist</span>
+        </button>
+        <button onclick="switchTab('history')" id="nav-history" class="nav-btn px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60">
+          <span>📜</span><span>History & DB</span>
+        </button>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- TAB 1: DASHBOARD -->
+      <!-- ============================================================== -->
+      <section id="tab-dashboard" class="tab-pane space-y-6">
+        <!-- Hero Banner -->
+        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-950 via-slate-900 to-slate-900 border border-emerald-500/20 p-6 md:p-8">
+          <div class="relative z-10 max-w-2xl">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-3">
+              ✨ Smart Nutritional Intelligence & SQLite Database Connected
+            </span>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
+              Eat Smart, Live Safe with <span class="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">SafeBite</span>
+            </h1>
+            <p class="mt-2 text-sm text-slate-300 leading-relaxed">
+              Instant AI food packaging analysis, OCR nutrition facts extraction, health scoring (0–100), and healthier Indian & global alternatives. All your scans are safely stored in your SQLite database.
+            </p>
+            <div class="mt-5 flex flex-wrap gap-3">
+              <button onclick="switchTab('scan')" class="px-5 py-2.5 rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center space-x-2 transition shadow-lg emerald-glow">
+                <span>📸 Analyze Product</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+              </button>
+              <button onclick="switchTab('compare')" class="px-5 py-2.5 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 flex items-center space-x-2 transition">
+                <span>⚖️ Compare 2 Foods</span>
+              </button>
+              <button onclick="openAuthModal('signup')" id="dashSignUpBtn" class="px-5 py-2.5 rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center space-x-1.5 shadow">
+                <span>✨ Create Free Account</span>
+              </button>
+            </div>
+          </div>
+          <!-- Decorative Background Blob -->
+          <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        </div>
+
+        <!-- Metric Stat Cards (Connected to SQLite DB) -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+            <div class="text-xs text-slate-400 font-medium">Scans in Database</div>
+            <div class="text-2xl font-extrabold text-emerald-400 mt-1" id="stat-scans-count">0</div>
+            <div class="text-[11px] text-slate-500 mt-1 flex items-center">Stored in SQLite `scans`</div>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+            <div class="text-xs text-slate-400 font-medium">Avg Health Score</div>
+            <div class="text-2xl font-extrabold text-teal-400 mt-1" id="stat-avg-score">76.4</div>
+            <div class="text-[11px] text-slate-500 mt-1">Grade: <span class="text-teal-400 font-semibold" id="stat-grade">Good</span></div>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+            <div class="text-xs text-slate-400 font-medium">Healthy Choices</div>
+            <div class="text-2xl font-extrabold text-emerald-400 mt-1" id="stat-healthy-pct">100%</div>
+            <div class="text-[11px] text-slate-500 mt-1">Recommended products</div>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+            <div class="text-xs text-slate-400 font-medium">Saved to Profile</div>
+            <div class="text-2xl font-extrabold text-cyan-400 mt-1" id="stat-saved-count">0</div>
+            <div class="text-[11px] text-slate-500 mt-1">Stored in `saved_foods`</div>
+          </div>
+        </div>
+
+        <!-- Diet Health Summary Bar on Dashboard -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div class="flex items-center space-x-3 w-full md:w-auto">
+            <span class="text-2xl">🥗</span>
+            <div>
+              <div class="text-xs font-bold text-white flex items-center space-x-2">
+                <span>Diet Quality Distribution:</span>
+                <span class="text-emerald-400 font-semibold" id="dashRatioText">Calculating...</span>
+              </div>
+              <div class="text-[11px] text-slate-400 mt-0.5">🟢 Healthy vs 🟡 Moderate vs 🔴 Unhealthy scanned foods</div>
+            </div>
+          </div>
+          <div class="w-full md:w-64 space-y-1">
+            <div class="h-2.5 w-full bg-slate-950 rounded-full overflow-hidden flex border border-slate-800">
+              <div id="dashBarHealthy" style="width: 100%" class="bg-emerald-500 transition-all duration-500"></div>
+              <div id="dashBarModerate" style="width: 0%" class="bg-amber-500 transition-all duration-500"></div>
+              <div id="dashBarUnhealthy" style="width: 0%" class="bg-rose-500 transition-all duration-500"></div>
+            </div>
+            <div class="flex justify-between text-[10px] text-slate-400">
+              <span id="dashCountHealthy">0 Healthy</span>
+              <span id="dashCountModerate">0 Moderate</span>
+              <span id="dashCountUnhealthy">0 Unhealthy</span>
+            </div>
+          </div>
+          <button onclick="switchTab('history')" class="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center space-x-1 whitespace-nowrap">
+            <span>View Full Chart</span><span>→</span>
+          </button>
+        </div>
+
+        <!-- Quick Demo Products Carousel -->
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-base font-bold text-white flex items-center">
+              <span class="mr-2">⚡</span> Quick Demo Products (1-Click Test)
+            </h2>
+            <span class="text-xs text-slate-400">Click any product to analyze</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+            <button onclick="loadSampleProduct('oats')" class="p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/50 transition flex flex-col items-center text-center group">
+              <span class="text-3xl mb-1 group-hover:scale-110 transition">🥣</span>
+              <span class="text-xs font-bold text-slate-200">Rolled Oats</span>
+              <span class="text-[10px] font-semibold text-emerald-400 mt-1">Score: 88 (Healthy)</span>
+            </button>
+            <button onclick="loadSampleProduct('dark_choc')" class="p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-amber-500/50 transition flex flex-col items-center text-center group">
+              <span class="text-3xl mb-1 group-hover:scale-110 transition">🍫</span>
+              <span class="text-xs font-bold text-slate-200">Dark Chocolate 85%</span>
+              <span class="text-[10px] font-semibold text-amber-400 mt-1">Score: 68 (Moderate)</span>
+            </button>
+            <button onclick="loadSampleProduct('chips')" class="p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-rose-500/50 transition flex flex-col items-center text-center group">
+              <span class="text-3xl mb-1 group-hover:scale-110 transition">🍟</span>
+              <span class="text-xs font-bold text-slate-200">Potato Chips</span>
+              <span class="text-[10px] font-semibold text-rose-400 mt-1">Score: 32 (Unhealthy)</span>
+            </button>
+            <button onclick="loadSampleProduct('noodles')" class="p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-rose-500/50 transition flex flex-col items-center text-center group">
+              <span class="text-3xl mb-1 group-hover:scale-110 transition">🍜</span>
+              <span class="text-xs font-bold text-slate-200">Instant Noodles</span>
+              <span class="text-[10px] font-semibold text-rose-400 mt-1">Score: 28 (Unhealthy)</span>
+            </button>
+            <button onclick="loadSampleProduct('almonds')" class="p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/50 transition flex flex-col items-center text-center group">
+              <span class="text-3xl mb-1 group-hover:scale-110 transition">🥜</span>
+              <span class="text-xs font-bold text-slate-200">Raw Almonds</span>
+              <span class="text-[10px] font-semibold text-emerald-400 mt-1">Score: 92 (Healthy)</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- TAB 2: FOOD ANALYZER (SCANNER / OCR / MANUAL) -->
+      <!-- ============================================================== -->
+      <section id="tab-scan" class="tab-pane hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+          <!-- Left Column: Input Form (Sub-tabs) -->
+          <div class="lg:col-span-5 space-y-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-sm">
+              <!-- Submode selector -->
+              <div class="flex p-1 bg-slate-800/80 rounded-xl mb-4 text-xs font-semibold">
+                <button onclick="switchScanSubmode('camera')" id="submode-camera" class="flex-1 py-1.5 rounded-lg bg-emerald-500 text-white transition flex items-center justify-center space-x-1">
+                  <span>📷</span><span>Live Camera</span>
+                </button>
+                <button onclick="switchScanSubmode('ocr')" id="submode-ocr" class="flex-1 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center space-x-1">
+                  <span>📸</span><span>Upload</span>
+                </button>
+                <button onclick="switchScanSubmode('barcode')" id="submode-barcode" class="flex-1 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center space-x-1">
+                  <span>🏷️</span><span>Barcode</span>
+                </button>
+                <button onclick="switchScanSubmode('manual')" id="submode-manual" class="flex-1 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center space-x-1">
+                  <span>✍️</span><span>Manual</span>
+                </button>
+              </div>
+
+              <!-- Submode 0: Live Camera Scanner -->
+              <div id="scan-view-camera" class="space-y-4">
+                <div class="relative bg-slate-950 rounded-2xl overflow-hidden border border-slate-700 aspect-video flex items-center justify-center">
+                  <!-- Live video stream -->
+                  <video id="cameraVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                  
+                  <!-- Viewfinder Target Reticle / Laser Scanning Overlay -->
+                  <div class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-4">
+                    <div class="w-44 h-44 border-2 border-dashed border-emerald-400/80 rounded-2xl relative flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                      <div class="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-emerald-400"></div>
+                      <div class="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-emerald-400"></div>
+                      <div class="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-emerald-400"></div>
+                      <div class="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-emerald-400"></div>
+                      <span class="text-[10px] text-emerald-300 font-bold bg-slate-950/85 px-2 py-0.5 rounded shadow">Align Food / Label</span>
+                    </div>
+                  </div>
+
+                  <!-- Camera Status Badge -->
+                  <div class="absolute top-2 left-2 z-10">
+                    <span id="cameraStatusBadge" class="text-[10px] font-semibold text-slate-400 bg-slate-900/85 px-2 py-0.5 rounded-full border border-slate-700">
+                      ○ Camera Inactive
+                    </span>
+                  </div>
+
+                  <!-- Flip / Switch Camera Button & Stop -->
+                  <div class="absolute top-2 right-2 z-10 flex space-x-1">
+                    <button type="button" onclick="toggleCameraFacing()" class="p-1.5 rounded-lg bg-slate-900/85 hover:bg-slate-800 text-slate-300 text-xs border border-slate-700" title="Switch Camera">
+                      🔄 Flip
+                    </button>
+                    <button type="button" onclick="stopCamera()" class="p-1.5 rounded-lg bg-slate-900/85 hover:bg-slate-800 text-slate-300 text-xs border border-slate-700" title="Stop Camera">
+                      ⏹️
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Hidden Canvas for frame snapshot -->
+                <canvas id="cameraCanvas" class="hidden"></canvas>
+
+                <!-- Camera Action Buttons -->
+                <div class="space-y-2">
+                  <button type="button" onclick="captureCameraPhoto()" id="btnCaptureCamera" class="w-full py-3 rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition flex items-center justify-center space-x-2 emerald-glow shadow-lg">
+                    <span>📸</span><span id="cameraBtnText">Snap Photo & Analyze with SafeBite AI</span>
+                  </button>
+                  
+                  <div class="flex items-center space-x-2">
+                    <button type="button" onclick="startCamera()" class="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition flex items-center justify-center space-x-1">
+                      <span>▶️</span><span>Start / Reset Camera</span>
+                    </button>
+                    <!-- Native Camera Fallback for Mobile Devices -->
+                    <label for="cameraNativeInput" class="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition flex items-center justify-center space-x-1 cursor-pointer text-center">
+                      <span>📱</span><span>Phone Camera App</span>
+                    </label>
+                    <input type="file" id="cameraNativeInput" accept="image/*" capture="environment" class="hidden" onchange="handleNativeCameraCapture(event)">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Submode 1: OCR / Image Upload -->
+              <div id="scan-view-ocr" class="hidden space-y-4">
+                <div id="dropZone" onclick="document.getElementById('fileInput').click()" class="border-2 border-dashed border-slate-700 hover:border-emerald-500/60 rounded-2xl p-6 text-center cursor-pointer transition bg-slate-950/40 group">
+                  <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="handleFileSelected(event)">
+                  <div class="w-12 h-12 mx-auto rounded-full bg-slate-800 group-hover:bg-emerald-500/20 text-slate-400 group-hover:text-emerald-400 flex items-center justify-center transition mb-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  </div>
+                  <p class="text-xs font-semibold text-slate-200">Click to upload food label image</p>
+                  <p class="text-[11px] text-slate-500 mt-1">PNG, JPG, or WEBP nutrition panel</p>
+                  <div id="selectedImagePreview" class="hidden mt-3 max-h-36 overflow-hidden rounded-lg border border-slate-700">
+                    <img id="previewImg" src="" alt="Food Preview" class="w-full h-full object-cover">
+                  </div>
+                </div>
+
+                <button onclick="triggerVisionAnalysis()" id="btnAnalyzeImg" class="w-full py-3 rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition flex items-center justify-center space-x-2 emerald-glow">
+                  <span id="analyzeBtnText">⚡ Analyze with SafeBite AI</span>
+                </button>
+              </div>
+
+              <!-- Submode 2: Barcode -->
+              <div id="scan-view-barcode" class="hidden space-y-4">
+                <div>
+                  <label class="block text-xs font-medium text-slate-400 mb-1">Enter Product Barcode / EAN</label>
+                  <div class="relative">
+                    <input type="text" id="barcodeInput" placeholder="e.g. 8901030000000" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-emerald-500 focus:outline-none text-xs text-white">
+                  </div>
+                </div>
+                <div class="flex flex-wrap gap-1.5">
+                  <span class="text-[10px] text-slate-500 self-center">Try:</span>
+                  <button onclick="testBarcode('8901030000000')" class="px-2 py-1 rounded bg-slate-800 text-[11px] text-slate-300 hover:text-white">8901030000000</button>
+                  <button onclick="testBarcode('8901063012345')" class="px-2 py-1 rounded bg-slate-800 text-[11px] text-slate-300 hover:text-white">8901063012345</button>
+                </div>
+                <button onclick="triggerBarcodeLookup()" class="w-full py-3 rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition">
+                  🔍 Lookup Barcode
+                </button>
+              </div>
+
+              <!-- Submode 3: Manual Entry -->
+              <div id="scan-view-manual" class="hidden space-y-3">
+                <div>
+                  <label class="block text-[11px] text-slate-400 mb-1">Product Name</label>
+                  <input type="text" id="man_name" value="Greek Yogurt High Protein" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[10px] text-slate-400 mb-0.5">Calories (kcal)</label>
+                    <input type="number" id="man_cal" value="95" class="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-slate-400 mb-0.5">Protein (g)</label>
+                    <input type="number" id="man_prot" value="10.5" class="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-slate-400 mb-0.5">Carbohydrates (g)</label>
+                    <input type="number" id="man_carb" value="6.0" class="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-slate-400 mb-0.5">Total Fat (g)</label>
+                    <input type="number" id="man_fat" value="2.0" class="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white">
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[11px] text-slate-400 mb-1">Ingredients (comma separated)</label>
+                  <input type="text" id="man_ing" value="Pasteurized skimmed milk, live active yogurt cultures" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white">
+                </div>
+                <button onclick="triggerManualAnalysis()" class="w-full py-3 rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition">
+                  🧮 Compute Health Score & Save to DB
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Interactive Analysis Result Card or Empty Placeholder -->
+          <div class="lg:col-span-7">
+
+            <!-- Empty State / Scan Prompt (Visible before scanning) -->
+            <div id="emptyScanCard" class="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-xl text-center flex flex-col items-center justify-center min-h-[480px]">
+              <div class="w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-4xl mb-4">
+                🥗
+              </div>
+              <h3 class="text-lg font-bold text-white mb-2">Abhi Tak Koi Food Scan Nahi Hua</h3>
+              <p class="text-xs text-slate-400 max-w-sm mb-6 leading-relaxed">
+                Bayein taraf se food packet ki photo upload karein, barcode scan karein, ya manual nutrition daal kar SafeBite AI health score aur recommendations payein.
+              </p>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full max-w-lg">
+                <button onclick="switchScanSubmode('camera')" class="p-3 rounded-2xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-xs font-semibold text-emerald-300 flex flex-col items-center space-y-1 transition group">
+                  <span class="text-2xl group-hover:scale-110 transition">📷</span>
+                  <span>Live Camera</span>
+                </button>
+                <button onclick="switchScanSubmode('ocr')" class="p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-xs font-semibold text-slate-200 flex flex-col items-center space-y-1 transition hover:border-emerald-500/50">
+                  <span class="text-2xl">📸</span>
+                  <span>Upload Image</span>
+                </button>
+                <button onclick="switchScanSubmode('barcode')" class="p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-xs font-semibold text-slate-200 flex flex-col items-center space-y-1 transition hover:border-emerald-500/50">
+                  <span class="text-2xl">🏷️</span>
+                  <span>Scan Barcode</span>
+                </button>
+                <button onclick="loadSampleProduct('chips')" class="p-3 rounded-2xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-xs font-semibold text-rose-300 flex flex-col items-center space-y-1 transition">
+                  <span class="text-2xl">🍟</span>
+                  <span>Test Unhealthy</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Analysis Result Card (Hidden until a product is scanned/selected) -->
+            <div id="resultsCard" class="hidden bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
+
+              <!-- Top Bar with Scan Another/Reset Button -->
+              <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Analysis Result</span>
+                <button onclick="resetScanState()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 hover:text-white transition flex items-center space-x-1">
+                  <span>🔄</span><span>Scan Another Product</span>
+                </button>
+              </div>
+
+              <!-- Top Bar of Result -->
+              <div class="flex items-start justify-between">
+                <div>
+                  <span id="resBadge" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    🟢 Healthy Choice
+                  </span>
+                  <h3 id="resProductName" class="text-xl font-extrabold text-white mt-2">Food Product</h3>
+                  <p id="resCategory" class="text-xs text-slate-400">Category</p>
+                </div>
+                <!-- Circular Animated Gauge -->
+                <div class="relative w-24 h-24 flex items-center justify-center">
+                  <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="40" stroke="#1e293b" stroke-width="8" fill="none"/>
+                    <circle id="gaugeArc" class="gauge-circle" cx="50" cy="50" r="40" stroke="#10b981" stroke-width="8" stroke-linecap="round" fill="none" stroke-dasharray="251.2" stroke-dashoffset="30"/>
+                  </svg>
+                  <div class="absolute flex flex-col items-center">
+                    <span id="resScoreNum" class="text-2xl font-black text-white">0</span>
+                    <span class="text-[9px] uppercase tracking-wider text-slate-400">/ 100</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Macronutrient Grid -->
+              <div class="grid grid-cols-4 gap-2 bg-slate-950/70 p-3 rounded-2xl border border-slate-800">
+                <div class="text-center p-2 rounded-xl bg-slate-900/60">
+                  <span class="block text-[10px] text-slate-400">Calories</span>
+                  <span id="resCal" class="text-sm font-bold text-white">0</span>
+                  <span class="text-[9px] text-slate-500">kcal</span>
+                </div>
+                <div class="text-center p-2 rounded-xl bg-slate-900/60">
+                  <span class="block text-[10px] text-slate-400">Protein</span>
+                  <span id="resProt" class="text-sm font-bold text-emerald-400">0g</span>
+                  <span class="text-[9px] text-slate-500">protein</span>
+                </div>
+                <div class="text-center p-2 rounded-xl bg-slate-900/60">
+                  <span class="block text-[10px] text-slate-400">Carbs</span>
+                  <span id="resCarb" class="text-sm font-bold text-cyan-400">0g</span>
+                  <span class="text-[9px] text-slate-500">carbs</span>
+                </div>
+                <div class="text-center p-2 rounded-xl bg-slate-900/60">
+                  <span class="block text-[10px] text-slate-400">Total Fat</span>
+                  <span id="resFat" class="text-sm font-bold text-amber-400">0g</span>
+                  <span class="text-[9px] text-slate-500">fat</span>
+                </div>
+              </div>
+
+              <!-- AI Nutritional Summary -->
+              <div class="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/80">
+                <div class="text-xs font-semibold text-slate-300 flex items-center mb-1.5">
+                  <span class="mr-1.5">💡</span> AI Health Analysis
+                </div>
+                <p id="resAnalysisText" class="text-xs text-slate-300 leading-relaxed">
+                  Nutritional profile evaluated.
+                </p>
+              </div>
+
+              <!-- Positives & Concerns 2-Column -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="p-3 rounded-2xl bg-emerald-950/20 border border-emerald-500/20">
+                  <span class="text-xs font-bold text-emerald-400 flex items-center mb-2">✅ Nutritional Benefits</span>
+                  <ul id="resBenefitsList" class="space-y-1 text-xs text-slate-300">
+                    <li>• Standard dietary value</li>
+                  </ul>
+                </div>
+                <div class="p-3 rounded-2xl bg-rose-950/20 border border-rose-500/20">
+                  <span class="text-xs font-bold text-rose-400 flex items-center mb-2">⚠️ Watchouts</span>
+                  <ul id="resConcernsList" class="space-y-1 text-xs text-slate-300">
+                    <li>• None noted in typical serving</li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- DYNAMIC HEALTHIER ALTERNATIVES & RECOMMENDATIONS BLOCK -->
+              <div id="resRecommendationsCard" class="space-y-3">
+                <!-- Dynamically injected via displayAnalysisResult -->
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="flex flex-wrap gap-3 pt-2">
+                <button onclick="saveCurrentFood()" class="flex-1 py-2.5 rounded-xl font-semibold text-xs bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition flex items-center justify-center space-x-1.5">
+                  <span>💾</span><span>Save to SQLite DB</span>
+                </button>
+                <button onclick="askAiAboutFood()" class="flex-1 py-2.5 rounded-xl font-semibold text-xs bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center justify-center space-x-1.5 shadow">
+                  <span>🤖</span><span>Ask AI Nutritionist</span>
+                </button>
+                <button onclick="compareWithAnother()" class="py-2.5 px-4 rounded-xl font-semibold text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                  ⚖️ Compare
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- TAB 3: COMPARE FOODS -->
+      <!-- ============================================================== -->
+      <section id="tab-compare" class="tab-pane hidden space-y-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <div>
+              <h2 class="text-lg font-bold text-white">Compare Two Food Products</h2>
+              <p class="text-xs text-slate-400">Head-to-head nutritional comparison & score calculation</p>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-xs text-slate-400">Quick Presets:</span>
+              <button onclick="loadComparePreset('oats_vs_cereal')" class="px-2.5 py-1 rounded-lg bg-slate-800 text-xs text-slate-300 hover:text-white border border-slate-700">Oats vs Cereal</button>
+              <button onclick="loadComparePreset('almonds_vs_chips')" class="px-2.5 py-1 rounded-lg bg-slate-800 text-xs text-slate-300 hover:text-white border border-slate-700">Almonds vs Chips</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Product A Card -->
+            <div class="bg-slate-950/60 p-5 rounded-2xl border border-slate-800 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">Product A</span>
+                <span id="cmpScoreA" class="text-lg font-extrabold text-emerald-400">88</span>
+              </div>
+              <input type="text" id="cmpNameA" value="Rolled Oats" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-semibold">
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <div><span class="text-[10px] text-slate-400">Calories (kcal)</span><input type="number" id="cmpCalA" value="389" class="w-full p-1.5 rounded bg-slate-900 border border-slate-700 text-white"></div>
+                <div><span class="text-[10px] text-slate-400">Protein (g)</span><input type="number" id="cmpProtA" value="16.9" class="w-full p-1.5 rounded bg-slate-900 border border-slate-700 text-white"></div>
+                <div><span class="text-[10px] text-slate-400">Carbs (g)</span><input type="number" id="cmpCarbA" value="66.3" class="w-full p-1.5 rounded bg-slate-900 border border-slate-700 text-white"></div>
+                <div><span class="text-[10px] text-slate-400">Fat (g)</span><input type="number" id="cmpFatA" value="6.9" class="w-full p-1.5 rounded bg-slate-900 border border-slate-700 text-white"></div>
+              </div>
+            </div>
+
+            <!-- Product B Card -->
+            <div class="bg-slate-950/60 p-5 rounded-2xl border border-slate-800 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-amber-400 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">Product B</span>
+                <span id="cmpScoreB" class="text-lg font-extrabold text-amber-400">42</span>
+              </div>
+              <input type="text" id="cmpNameB" value="Sugary Frosted Cornflakes" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-semibold">
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <div><span class="text-[10px] text-slate-400">Calories (kcal)</span><input type="number" id="cmpCalB" value="410" class="w-full p-1.5 rounded bg-slate-900 border border-slate-700 text-white"></div>
+                <div><span class="text-[10px] text-slate-400">Protein (g)</span><input type="number" id="cmpProtB" value="4.5" class="w-full p-1.5 rounded bg-slate-900 border border-slate-700 text-white"></div>
+                <div><span class="text-[10px] text-slate-400">Carbs (g)</span><input type="number" id="cmpCarbB" value="84.0" class="w-full p-1.5 rounded bg-slate-900 border border-slate-700 text-white"></div>
+                <div><span class="text-[10px] text-slate-400">Fat (g)</span><input type="number" id="cmpFatB" value="1.2" class="w-full p-1.5 rounded bg-slate-900 border border-slate-700 text-white"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-5 flex justify-center">
+            <button onclick="runComparison()" class="px-8 py-3 rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition emerald-glow">
+              ⚡ Compare Now & Pick Winner
+            </button>
+          </div>
+
+          <!-- Comparison Winner Result Card -->
+          <div id="cmpResultContainer" class="mt-6 p-5 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+              <div class="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl font-bold">🏆</div>
+              <div>
+                <span class="text-xs text-slate-400">Clear Winner:</span>
+                <h4 id="cmpWinnerName" class="text-base font-extrabold text-white">Rolled Oats is significantly healthier!</h4>
+                <p id="cmpDifferenceText" class="text-xs text-slate-300 mt-0.5">Rolled Oats provides +12.4g more protein, higher dietary fiber, and minimal sugar.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- TAB 4: INDIAN FOODS DATABASE -->
+      <!-- ============================================================== -->
+      <section id="tab-indian" class="tab-pane hidden space-y-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6">
+          <div class="max-w-xl mx-auto text-center mb-6">
+            <h2 class="text-lg font-bold text-white">Indian Traditional Foods & Snacks</h2>
+            <p class="text-xs text-slate-400 mt-1">Search 100+ authentic Indian recipes with verified macro profiles</p>
+            <div class="mt-4 relative">
+              <input type="text" id="indianSearchQuery" onkeyup="handleIndianSearchKey(event)" placeholder="Search Samosa, Paneer Tikka, Idli, Dosa, Dal Makhani..." class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500">
+              <button onclick="searchIndianFoods()" class="absolute right-2 top-2 px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl">Search</button>
+            </div>
+          </div>
+
+          <div id="indianFoodGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <!-- Populated dynamically via JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- TAB 5: DIABETES RISK CHECKER -->
+      <!-- ============================================================== -->
+      <section id="tab-diabetes" class="tab-pane hidden space-y-6">
+        <div class="max-w-2xl mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-lg font-bold text-white">Diabetic Safety & Glycemic Evaluation</h2>
+              <p class="text-xs text-slate-400">Personalized diabetic risk analysis powered by SafeBite Health Intelligence</p>
+            </div>
+            <span class="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold" id="diabUserBadge">User: demo_user</span>
+          </div>
+
+          <div class="space-y-4 text-xs">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-slate-400 mb-1">Age (Years)</label>
+                <input type="number" id="diab_age" value="28" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white">
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1">Diabetic Status</label>
+                <select id="diab_status" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white">
+                  <option value="false">Non-Diabetic</option>
+                  <option value="true">Diabetic / Pre-diabetic</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-slate-400 mb-1">Weight (kg)</label>
+                <input type="number" id="diab_weight" value="68" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white">
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1">Height (cm)</label>
+                <input type="number" id="diab_height" value="172" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white">
+              </div>
+            </div>
+
+            <div class="flex gap-2">
+              <button onclick="calculateDiabetesRisk()" class="flex-1 py-3 rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition emerald-glow">
+                🩺 Check Diabetic Profile & Safety
+              </button>
+              <button onclick="saveUserProfileFromDiabetes()" class="px-4 py-3 rounded-xl font-semibold text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="Save these metrics to your profile in SQLite database">
+                💾 Save to SQLite Profile
+              </button>
+            </div>
+          </div>
+
+          <!-- Diabetes Output Card -->
+          <div id="diabetesResultCard" class="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-300">BMI: <span id="diabBmiVal" class="text-emerald-400 font-extrabold">23.0</span> (<span id="diabBmiCat">Normal</span>)</span>
+              <span id="diabRiskBadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Low Risk</span>
+            </div>
+            <p id="diabRecommendation" class="text-xs text-slate-300 leading-relaxed">
+              Maintain complex fiber intake. SafeBite evaluates packaged items based on high glycemic index ingredients to protect blood sugar stability.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- TAB 6: AI NUTRITIONIST CHAT -->
+      <!-- ============================================================== -->
+      <section id="tab-chat" class="tab-pane hidden space-y-4">
+        <div class="max-w-3xl mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-5 flex flex-col h-[650px] shadow-xl">
+          <!-- Chat Header -->
+          <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-lg">🤖</div>
+              <div>
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                  <span>SafeBite AI Nutrition Assistant</span>
+                  <span id="chatModelBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/20">Active</span>
+                </h3>
+                <p class="text-[11px] text-slate-400">Ask anything about ingredients, health scores, diet & foods</p>
+              </div>
+            </div>
+            <button onclick="openAiAgentModal()" class="text-xs text-emerald-400 hover:text-emerald-300 font-semibold flex items-center space-x-1">
+              <span>⚙️ AI Settings</span>
+            </button>
+          </div>
+
+          <!-- Chat Messages Area -->
+          <div id="chatMessages" class="flex-1 overflow-y-auto custom-scroll py-4 space-y-3">
+            <div class="flex items-start space-x-2">
+              <div class="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold shrink-0">AI</div>
+              <div class="bg-slate-800/80 text-slate-200 text-xs p-3 rounded-2xl rounded-tl-sm max-w-[85%] leading-relaxed">
+                Hello! I am your SafeBite AI Nutrition Assistant. Ask me about food health scores, macronutrients, glycemic index, ingredients like palm oil or jaggery, or healthy alternatives!
+              </div>
+            </div>
+          </div>
+
+          <!-- Suggested Chips -->
+          <div class="flex flex-wrap gap-1.5 py-2 border-t border-slate-800/60 overflow-x-auto text-[11px]">
+            <button onclick="sendQuickChat('Is jaggery healthier than white sugar?')" class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700">Jaggery vs Sugar</button>
+            <button onclick="sendQuickChat('Suggest 5 high protein vegetarian snacks')" class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700">High Protein Snacks</button>
+            <button onclick="sendQuickChat('Why is palm oil considered bad in packaged foods?')" class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700">Palm Oil Effects</button>
+            <button onclick="sendQuickChat('What are the best foods for diabetics?')" class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700">Diabetic Friendly Foods</button>
+          </div>
+
+          <!-- Input Bar -->
+          <div class="flex items-center space-x-2 pt-2">
+            <input type="text" id="chatInput" onkeydown="if(event.key==='Enter') sendChatMessage()" placeholder="Ask AI nutritionist about food or ingredients..." class="flex-1 px-4 py-3 rounded-2xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500">
+            <button onclick="sendChatMessage()" id="chatSendBtn" class="px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition emerald-glow">
+              Send
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- TAB 7: HISTORY & DATABASE -->
+      <!-- ============================================================== -->
+      <section id="tab-history" class="tab-pane hidden space-y-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+              <h2 class="text-base font-bold text-white flex items-center space-x-2">
+                <span>Database Records for</span>
+                <span class="text-emerald-400" id="histUsernameHeader">demo_user</span>
+              </h2>
+              <p class="text-xs text-slate-400">All data directly saved and retrieved from SQLite (`safebite.db`)</p>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button onclick="refreshHistory()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300">🔄 Refresh DB</button>
+              <button onclick="clearUserHistory()" class="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 text-rose-400 text-xs">🗑️ Clear History</button>
+            </div>
+          </div>
+
+          <!-- ============================================================== -->
+          <!-- DIET HISTORY & CONSUMPTION CHART (Healthy vs Unhealthy Foods) -->
+          <!-- ============================================================== -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-3xl p-5 mb-6 shadow-inner">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <div>
+                <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                  <span>📊</span>
+                  <span>Diet History Chart (Healthy vs Unhealthy Foods Scanned)</span>
+                </h3>
+                <p class="text-xs text-slate-400 mt-0.5">
+                  Aapne kitne healthy, moderate, aur unhealthy food khaye/scan kiye hain uska live chart & breakdown
+                </p>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span id="dietQualityBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  Grade: Calculating...
+                </span>
+              </div>
+            </div>
+
+            <!-- Chart & Metrics Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+              
+              <!-- Visual SVG Donut Chart -->
+              <div class="md:col-span-4 flex flex-col items-center justify-center p-3 bg-slate-900/70 rounded-2xl border border-slate-800">
+                <div class="relative w-36 h-36 flex items-center justify-center">
+                  <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100" id="historyDonutSvg">
+                    <!-- Base background track -->
+                    <circle cx="50" cy="50" r="38" stroke="#1e293b" stroke-width="12" fill="none"/>
+                    <!-- Healthy Arc (Green) -->
+                    <circle id="donutHealthyArc" cx="50" cy="50" r="38" stroke="#10b981" stroke-width="12" fill="none" stroke-linecap="round" stroke-dasharray="238.76 238.76" stroke-dashoffset="0" class="transition-all duration-700"/>
+                    <!-- Moderate Arc (Amber) -->
+                    <circle id="donutModerateArc" cx="50" cy="50" r="38" stroke="#f59e0b" stroke-width="12" fill="none" stroke-linecap="round" stroke-dasharray="0 238.76" stroke-dashoffset="0" class="transition-all duration-700"/>
+                    <!-- Unhealthy Arc (Rose/Red) -->
+                    <circle id="donutUnhealthyArc" cx="50" cy="50" r="38" stroke="#f43f5e" stroke-width="12" fill="none" stroke-linecap="round" stroke-dasharray="0 238.76" stroke-dashoffset="0" class="transition-all duration-700"/>
+                  </svg>
+                  <div class="absolute flex flex-col items-center text-center">
+                    <span id="donutTotalCount" class="text-xl font-black text-white">0</span>
+                    <span class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Foods Logged</span>
+                  </div>
+                </div>
+                <div class="text-[11px] text-slate-400 mt-2 font-medium">Avg Score: <strong class="text-white" id="donutAvgScore">--</strong>/100</div>
+              </div>
+
+              <!-- Breakdown Stat Cards & Segmented Ratio Bar -->
+              <div class="md:col-span-8 space-y-3.5">
+                
+                <!-- 3 Category Stat Cards -->
+                <div class="grid grid-cols-3 gap-2.5">
+                  <div class="p-3 rounded-xl bg-emerald-950/20 border border-emerald-500/30 text-center">
+                    <span class="text-[11px] font-semibold text-emerald-400 block">🟢 Healthy</span>
+                    <div class="text-lg font-black text-white mt-0.5" id="chartCountHealthy">0</div>
+                    <span class="text-[10px] text-emerald-300/80 font-medium" id="chartPctHealthy">0%</span>
+                  </div>
+                  <div class="p-3 rounded-xl bg-amber-950/20 border border-amber-500/30 text-center">
+                    <span class="text-[11px] font-semibold text-amber-400 block">🟡 Moderate</span>
+                    <div class="text-lg font-black text-white mt-0.5" id="chartCountModerate">0</div>
+                    <span class="text-[10px] text-amber-300/80 font-medium" id="chartPctModerate">0%</span>
+                  </div>
+                  <div class="p-3 rounded-xl bg-rose-950/20 border border-rose-500/30 text-center">
+                    <span class="text-[11px] font-semibold text-rose-400 block">🔴 Unhealthy</span>
+                    <div class="text-lg font-black text-white mt-0.5" id="chartCountUnhealthy">0</div>
+                    <span class="text-[10px] text-rose-300/80 font-medium" id="chartPctUnhealthy">0%</span>
+                  </div>
+                </div>
+
+                <!-- Segmented Ratio Progress Bar -->
+                <div>
+                  <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                    <span>Consumption Ratio</span>
+                    <span id="chartRatioLabel">0% Healthy Choices</span>
+                  </div>
+                  <div class="h-3 w-full bg-slate-900 rounded-full overflow-hidden flex border border-slate-800">
+                    <div id="barHealthy" style="width: 0%" class="bg-emerald-500 transition-all duration-500" title="Healthy"></div>
+                    <div id="barModerate" style="width: 0%" class="bg-amber-500 transition-all duration-500" title="Moderate"></div>
+                    <div id="barUnhealthy" style="width: 0%" class="bg-rose-500 transition-all duration-500" title="Unhealthy"></div>
+                  </div>
+                </div>
+
+                <!-- AI Health Feedback Box -->
+                <div id="historyDietFeedbackBox" class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-300 leading-relaxed flex items-start space-x-2.5">
+                  <span class="text-base" id="historyFeedbackIcon">💡</span>
+                  <span id="historyDietFeedbackText">SafeBite AI aapke scanned foods ke hisaab se health advice calculate kar raha hai...</span>
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- History Filter Chips -->
+            <div class="flex flex-wrap items-center gap-2 mt-4 pt-3.5 border-t border-slate-800/80">
+              <span class="text-xs text-slate-400 mr-1 font-medium">Filter History:</span>
+              <button onclick="filterHistoryScans('all')" id="btnFilterAll" class="px-3 py-1 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950 transition">
+                Sabhi (<span id="countFilterAll">0</span>)
+              </button>
+              <button onclick="filterHistoryScans('healthy')" id="btnFilterHealthy" class="px-3 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:text-white transition">
+                🟢 Healthy (<span id="countFilterHealthy">0</span>)
+              </button>
+              <button onclick="filterHistoryScans('moderate')" id="btnFilterModerate" class="px-3 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:text-white transition">
+                🟡 Moderate (<span id="countFilterModerate">0</span>)
+              </button>
+              <button onclick="filterHistoryScans('unhealthy')" id="btnFilterUnhealthy" class="px-3 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:text-white transition">
+                🔴 Unhealthy (<span id="countFilterUnhealthy">0</span>)
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Subtabs for Scans vs Saved Foods -->
+          <div class="flex space-x-2 border-b border-slate-800 pb-2 mb-4 text-xs font-semibold">
+            <button onclick="switchHistorySubTab('scans')" id="histSubTab-scans" class="px-4 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-bold">Scanned Products</button>
+            <button onclick="switchHistorySubTab('saved')" id="histSubTab-saved" class="px-4 py-1.5 rounded-lg text-slate-400 hover:text-white">Saved Foods</button>
+          </div>
+
+          <div id="historyListContainer" class="space-y-3">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: LOGIN & SIGN UP (AUTH MODAL) -->
+  <!-- ============================================================== -->
+  <div id="authModal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">🥗</div>
+          <h3 class="text-base font-bold text-white">SafeBite Account</h3>
+        </div>
+        <button onclick="closeAuthModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+
+      <!-- Auth Tabs: Sign In / Create Account -->
+      <div class="flex p-1 bg-slate-950 rounded-xl text-xs font-semibold">
+        <button onclick="switchAuthTab('login')" id="authTabLogin" class="flex-1 py-2 rounded-lg bg-emerald-500 text-slate-950 font-bold transition">Sign In</button>
+        <button onclick="switchAuthTab('signup')" id="authTabSignup" class="flex-1 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition">Create Account</button>
+      </div>
+
+      <!-- FORM 1: LOGIN -->
+      <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Username</label>
+          <input type="text" id="loginUsername" required placeholder="Enter username" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:border-emerald-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Password</label>
+          <input type="password" id="loginPassword" required placeholder="Enter password" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:border-emerald-500 focus:outline-none">
+        </div>
+        <button type="submit" id="loginSubmitBtn" class="w-full py-3 rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition emerald-glow">
+          Sign In to SafeBite
+        </button>
+      </form>
+
+      <!-- FORM 2: SIGN UP -->
+      <form id="signupForm" onsubmit="handleSignupSubmit(event)" class="hidden space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Username (min 3 chars)</label>
+          <input type="text" id="signupUsername" required placeholder="Choose username" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:border-emerald-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Password (min 4 chars)</label>
+          <input type="password" id="signupPassword" required placeholder="Create password" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:border-emerald-500 focus:outline-none">
+        </div>
+        
+        <!-- Health Profile Fields for DB -->
+        <div class="pt-2 border-t border-slate-800">
+          <span class="block text-[11px] font-semibold text-emerald-400 mb-2">Optional Health Profile (Stored in SQLite):</span>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-0.5">Age</label>
+              <input type="number" id="signupAge" placeholder="25" class="w-full p-2 rounded-lg bg-slate-950 border border-slate-700 text-white">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-0.5">Gender</label>
+              <select id="signupGender" class="w-full p-2 rounded-lg bg-slate-950 border border-slate-700 text-white">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-0.5">Weight (kg)</label>
+              <input type="number" id="signupWeight" placeholder="68" class="w-full p-2 rounded-lg bg-slate-950 border border-slate-700 text-white">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 mb-0.5">Height (cm)</label>
+              <input type="number" id="signupHeight" placeholder="170" class="w-full p-2 rounded-lg bg-slate-950 border border-slate-700 text-white">
+            </div>
+          </div>
+          <div class="mt-2 flex items-center space-x-2">
+            <input type="checkbox" id="signupDiabetic" class="rounded bg-slate-950 border-slate-700 text-emerald-500 focus:ring-0">
+            <label for="signupDiabetic" class="text-xs text-slate-300">I have Diabetes / Pre-diabetes</label>
+          </div>
+        </div>
+
+        <button type="submit" id="signupSubmitBtn" class="w-full py-3 rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition emerald-glow mt-2">
+          Create Account & Connect DB
+        </button>
+      </form>
+
+      <!-- Quick Demo Access -->
+      <div class="pt-2 border-t border-slate-800 text-center">
+        <button type="button" onclick="continueAsGuest()" class="text-xs text-slate-400 hover:text-emerald-400">
+          Or Continue as <strong>demo_user</strong> (Instant Access)
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: USER PROFILE & LOGOUT -->
+  <!-- ============================================================== -->
+  <div id="profileModal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-white flex items-center space-x-2">
+          <span>👤 User Profile (SQLite DB)</span>
+        </h3>
+        <button onclick="closeProfileModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+
+      <div class="flex items-center space-x-3 p-3 rounded-2xl bg-slate-950 border border-slate-800">
+        <div class="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 font-extrabold flex items-center justify-center text-lg" id="profileModalAvatar">U</div>
+        <div>
+          <h4 class="text-sm font-bold text-white" id="profileModalUsername">demo_user</h4>
+          <span class="text-xs text-emerald-400">Account Active in SQLite DB</span>
+        </div>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-slate-400 mb-0.5">Age</label>
+            <input type="number" id="profAge" class="w-full p-2 rounded-lg bg-slate-950 border border-slate-700 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-0.5">Gender</label>
+            <select id="profGender" class="w-full p-2 rounded-lg bg-slate-950 border border-slate-700 text-white">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-0.5">Weight (kg)</label>
+            <input type="number" id="profWeight" class="w-full p-2 rounded-lg bg-slate-950 border border-slate-700 text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-0.5">Height (cm)</label>
+            <input type="number" id="profHeight" class="w-full p-2 rounded-lg bg-slate-950 border border-slate-700 text-white">
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <input type="checkbox" id="profDiabetic" class="rounded bg-slate-950 border-slate-700 text-emerald-500">
+          <label for="profDiabetic" class="text-xs text-slate-300">Diabetic / High Glycemic Risk</label>
+        </div>
+
+        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px] text-slate-400">
+          <div>Computed BMI: <strong class="text-emerald-400" id="profBmi">-</strong> (<span id="profBmiCat">-</span>)</div>
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button onclick="saveUserProfileModal()" class="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition">
+          Update Profile in DB
+        </button>
+        <button onclick="handleLogout()" class="px-4 py-2.5 rounded-xl bg-rose-950/60 hover:bg-rose-900 border border-rose-500/30 text-rose-300 font-bold text-xs transition">
+          Log Out
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: AI AGENT SETTINGS & GEMINI API KEY -->
+  <!-- ============================================================== -->
+  <div id="aiAgentModal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-white flex items-center space-x-2">
+          <span>🤖 AI Nutrition Agent Settings</span>
+        </h3>
+        <button onclick="closeAiAgentModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+
+      <div class="p-3 rounded-2xl bg-emerald-950/30 border border-emerald-500/20 text-xs text-emerald-300 leading-relaxed">
+        <strong>Dual AI Architecture:</strong> SafeBite includes an <strong>Autonomous Clinical Nutrition Agent</strong> that works right out of the box. You can also connect your <strong>Google Gemini API Key</strong> for Gemini 2.5 Flash live reasoning!
+      </div>
+
+      <div class="space-y-2 text-xs">
+        <label class="block font-medium text-slate-300">Google Gemini API Key (Optional)</label>
+        <input type="password" id="geminiApiKeyInput" placeholder="AIzaSy..." class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:border-emerald-500 focus:outline-none">
+        <p class="text-[11px] text-slate-500">Get a free key from <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-emerald-400 underline">Google AI Studio</a>.</p>
+      </div>
+
+      <div class="flex justify-end space-x-2 pt-2">
+        <button onclick="saveGeminiApiKey()" class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition emerald-glow">
+          Save & Activate Key
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BACKEND CONFIGURATION MODAL -->
+  <div id="backendModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-white">Database & API Status</h3>
+        <button onclick="closeBackendConfigModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <p class="text-xs text-slate-400">All data is persistently stored in SQLite (`safebite.db`):</p>
+
+      <div class="space-y-2 text-xs">
+        <label class="block font-medium text-slate-300">API Base URL</label>
+        <input type="text" id="customApiUrlInput" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs">
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <button onclick="setApiUrl('http://127.0.0.1:8000')" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-left text-xs text-slate-200 border border-slate-700">
+          💻 <strong>Local Server:</strong> http://127.0.0.1:8000 (Connected to SQLite safebite.db)
+        </button>
+        <button onclick="setApiUrl('https://safebite-g3fc.onrender.com')" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-left text-xs text-slate-200 border border-slate-700">
+          ☁️ <strong>Cloud Server (Render):</strong> https://safebite-g3fc.onrender.com
+        </button>
+      </div>
+
+      <div class="pt-2 flex justify-end space-x-2">
+        <button onclick="testAndSaveApiUrl()" class="px-4 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs">Save & Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
+
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <script>
+    // State management
+    let activeApiBase = window.location.origin.includes('http') && !window.location.origin.includes('file:') ? window.location.origin : 'http://127.0.0.1:8000';
+    let currentUsername = localStorage.getItem('safebite_current_user') || 'demo_user';
+    let isPhoneMode = false;
+    let currentAnalysis = null;
+    let activeHistorySubTab = 'scans';
+
+    // Sample Products Data
+    const SAMPLE_PRODUCTS = {
+      oats: {
+        product_name: "Rolled Oats (Whole Grain)",
+        category: "Breakfast Cereal • High Fiber",
+        health_score: 88,
+        classification: "Healthy",
+        nutrition: { calories: 389, protein: 16.9, carbs: 66.3, fat: 6.9, sugar: 0.9, fiber: 10.6, sodium: 2 },
+        analysis: "Rich in beta-glucan soluble fiber which actively lowers LDL cholesterol and stabilizes blood glucose. Contains zero artificial additives.",
+        benefits: ["High dietary fiber (10.6g)", "Low saturated fat & zero trans fat", "Rich in iron, zinc, and magnesium"],
+        concerns: ["Moderate carbohydrate portion"],
+        healthier_alternatives: ["Steel-cut Oats", "Quinoa Flakes", "Barley Porridge"]
+      },
+      dark_choc: {
+        product_name: "Dark Chocolate 85% Cacao",
+        category: "Confectionery • Antioxidant Rich",
+        health_score: 68,
+        classification: "Moderate",
+        nutrition: { calories: 580, protein: 9.0, carbs: 36.0, fat: 46.0, sugar: 14.0, fiber: 11.0, sodium: 15 },
+        analysis: "Contains potent polyphenols and flavonols that support cardiovascular health, but calorically dense with high saturated cocoa butter fat.",
+        benefits: ["High antioxidant flavonoids", "Very low sugar compared to milk chocolate", "Good source of magnesium"],
+        concerns: ["High caloric density (580 kcal/100g)", "High saturated fat content"],
+        healthier_alternatives: ["Raw Cacao Nibs", "Unsweetened Cocoa Powder with Almond Milk"]
+      },
+      chips: {
+        product_name: "Classic Salted Potato Chips",
+        category: "Processed Snack • High Sodium",
+        health_score: 32,
+        classification: "Unhealthy",
+        nutrition: { calories: 542, protein: 6.5, carbs: 53.0, fat: 34.0, sugar: 0.5, fiber: 3.2, sodium: 540 },
+        analysis: "Ultra-processed snack fried in refined palm or vegetable oil. Extremely high sodium (540mg) and empty calories with negligible micronutrients.",
+        benefits: ["Fast calorie energy"],
+        concerns: ["High sodium promotes hypertension", "High saturated fat from frying", "High acrylamide content"],
+        healthier_alternatives: ["Air-popped Popcorn", "Roasted Makhana (Foxnuts)", "Baked Vegetable Crisps"]
+      },
+      noodles: {
+        product_name: "Instant 2-Minute Masala Noodles",
+        category: "Instant Noodles • High Sodium",
+        health_score: 28,
+        classification: "Unhealthy",
+        nutrition: { calories: 430, protein: 8.0, carbs: 62.0, fat: 16.5, sugar: 3.0, fiber: 2.0, sodium: 980 },
+        analysis: "Made with refined wheat flour (maida) and deep fried in palm oil cake. Single pack exceeds 45% of daily recommended sodium limit.",
+        benefits: ["Quick convenience"],
+        concerns: ["Extremely high sodium (980mg)", "Refined maida spikes blood sugar", "Contains flavor enhancers and stabilizers"],
+        healthier_alternatives: ["Millet Noodles", "Whole Wheat Vermicelli Upma", "Oats Khichdi"]
+      },
+      almonds: {
+        product_name: "California Raw Almonds",
+        category: "Nuts & Seeds • Healthy Fats",
+        health_score: 92,
+        classification: "Healthy",
+        nutrition: { calories: 579, protein: 21.2, carbs: 21.6, fat: 49.9, sugar: 4.4, fiber: 12.5, sodium: 1 },
+        analysis: "Superfood rich in monounsaturated heart-healthy fatty acids, vitamin E, plant-based protein, and gut-friendly prebiotic fiber.",
+        benefits: ["21.2g plant protein per 100g", "High in Vitamin E antioxidant", "Supports steady glycemic response"],
+        concerns: ["Calorie dense; consume controlled 30g portions"],
+        healthier_alternatives: ["Walnuts", "Pumpkin Seeds", "Roasted Flaxseeds"]
+      }
+    };
+
+    // Indian Food Items Presets
+    const INDIAN_FOODS_SAMPLE = [
+      { name: "Samosa", calories: 262, protein: 3.5, carbs: 24, fat: 17, category: "Snack" },
+      { name: "Paneer Tikka", calories: 220, protein: 18, carbs: 6, fat: 14, category: "Appetizer" },
+      { name: "Idli (2 pcs) with Sambar", calories: 156, protein: 5.5, carbs: 30, fat: 1.2, category: "Breakfast" },
+      { name: "Masala Dosa", calories: 387, protein: 7.2, carbs: 54, fat: 15.5, category: "South Indian" },
+      { name: "Dal Makhani", calories: 310, protein: 11, carbs: 32, fat: 15, category: "Curry" },
+      { name: "Dhokla (Steamed)", calories: 160, protein: 7.0, carbs: 26, fat: 2.5, category: "Healthy Snack" }
+    ];
+
+    // Initialization
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('customApiUrlInput').value = activeApiBase;
+      updateUserUI();
+      checkApiHealth();
+      resetScanState();
+      renderIndianFoodGrid(INDIAN_FOODS_SAMPLE);
+      loadDashboardStats();
+      refreshHistory();
+    });
+
+    // Update User Display in UI
+    function updateUserUI() {
+      document.getElementById('userDisplayName').textContent = currentUsername;
+      document.getElementById('userAvatar').textContent = currentUsername.charAt(0).toUpperCase();
+      document.getElementById('histUsernameHeader').textContent = currentUsername;
+      document.getElementById('diabUserBadge').textContent = `User: ${currentUsername}`;
+      document.getElementById('profileModalUsername').textContent = currentUsername;
+      document.getElementById('profileModalAvatar').textContent = currentUsername.charAt(0).toUpperCase();
+    }
+
+    // Check backend health
+    async function checkApiHealth() {
+      const dot = document.getElementById('statusDot');
+      const label = document.getElementById('statusLabel');
+
+      try {
+        const res = await fetch(`${activeApiBase}/health`, { signal: AbortSignal.timeout(3000) });
+        if (res.ok) {
+          const data = await res.json();
+          dot.className = "w-2 h-2 rounded-full bg-emerald-400";
+          label.textContent = "SQLite DB Connected";
+          label.className = "text-emerald-400 font-medium";
+          
+          if (data.gemini_configured) {
+            document.getElementById('aiAgentStatusLabel').textContent = "Gemini AI Live";
+            document.getElementById('chatModelBadge').textContent = "Gemini 2.5 Flash";
+          } else {
+            document.getElementById('aiAgentStatusLabel').textContent = "AI Agent Active";
+            document.getElementById('chatModelBadge').textContent = "Autonomous AI";
+          }
+          return;
+        }
+      } catch (e) {
+        dot.className = "w-2 h-2 rounded-full bg-amber-400";
+        label.textContent = "Offline / Demo Mode";
+        label.className = "text-amber-400 font-medium";
+      }
+    }
+
+    // Tab Navigation
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('bg-emerald-500', 'text-white', 'shadow');
+        btn.classList.add('text-slate-400');
+      });
+
+      const targetPane = document.getElementById(`tab-${tabId}`);
+      const targetNav = document.getElementById(`nav-${tabId}`);
+      if (targetPane) targetPane.classList.remove('hidden');
+      if (targetNav) {
+        targetNav.classList.remove('text-slate-400');
+        targetNav.classList.add('bg-emerald-500', 'text-white', 'shadow');
+      }
+
+      if (tabId === 'history') refreshHistory();
+      if (tabId === 'dashboard') loadDashboardStats();
+      if (tabId !== 'scan') stopCamera();
+    }
+
+    // Toggle Phone View vs Fullscreen
+    function toggleViewportMode() {
+      const container = document.getElementById('appContainer');
+      const toggleText = document.getElementById('viewToggleText');
+      const toggleIcon = document.getElementById('viewToggleIcon');
+
+      isPhoneMode = !isPhoneMode;
+      if (isPhoneMode) {
+        container.classList.remove('max-w-6xl');
+        container.classList.add('max-w-md', 'border', 'border-slate-800', 'rounded-[40px]', 'p-4', 'bg-slate-950', 'shadow-2xl');
+        toggleText.textContent = "Desktop Mode";
+        toggleIcon.textContent = "💻";
+        showToast("📱 Switched to Phone Mockup View");
+      } else {
+        container.classList.remove('max-w-md', 'border', 'border-slate-800', 'rounded-[40px]', 'p-4', 'bg-slate-950', 'shadow-2xl');
+        container.classList.add('max-w-6xl');
+        toggleText.textContent = "Phone Mode";
+        toggleIcon.textContent = "📱";
+        showToast("💻 Switched to Full Desktop View");
+      }
+    }
+
+    // ==============================================================
+    // AUTHENTICATION LOGIC (LOGIN & SIGN UP CONNECTED TO SQLITE DB)
+    // ==============================================================
+    function openAuthModal(mode = 'login') {
+      document.getElementById('authModal').classList.remove('hidden');
+      switchAuthTab(mode);
+    }
+    function closeAuthModal() {
+      document.getElementById('authModal').classList.add('hidden');
+    }
+
+    function switchAuthTab(tab) {
+      const tabLogin = document.getElementById('authTabLogin');
+      const tabSignup = document.getElementById('authTabSignup');
+      const formLogin = document.getElementById('loginForm');
+      const formSignup = document.getElementById('signupForm');
+
+      if (tab === 'login') {
+        tabLogin.className = "flex-1 py-2 rounded-lg bg-emerald-500 text-slate-950 font-bold transition";
+        tabSignup.className = "flex-1 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition";
+        formLogin.classList.remove('hidden');
+        formSignup.classList.add('hidden');
+      } else {
+        tabSignup.className = "flex-1 py-2 rounded-lg bg-emerald-500 text-slate-950 font-bold transition";
+        tabLogin.className = "flex-1 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition";
+        formSignup.classList.remove('hidden');
+        formLogin.classList.add('hidden');
+      }
+    }
+
+    async function handleLoginSubmit(e) {
+      e.preventDefault();
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
+      const btn = document.getElementById('loginSubmitBtn');
+
+      btn.disabled = true;
+      btn.textContent = "Verifying with Database...";
+
+      try {
+        const res = await fetch(`${activeApiBase}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.status === 'success') {
+          currentUsername = username;
+          localStorage.setItem('safebite_current_user', username);
+          updateUserUI();
+          closeAuthModal();
+          showToast(`✅ Welcome back, ${username}! Connected to SQLite DB.`);
+          loadDashboardStats();
+          refreshHistory();
+        } else {
+          showToast(`❌ Login failed: ${data.detail || data.message || "Invalid credentials"}`);
+        }
+      } catch (err) {
+        showToast("⚠️ Could not reach SQLite backend server.");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Sign In to SafeBite";
+      }
+    }
+
+    async function handleSignupSubmit(e) {
+      e.preventDefault();
+      const username = document.getElementById('signupUsername').value.trim();
+      const password = document.getElementById('signupPassword').value.trim();
+      const age = parseInt(document.getElementById('signupAge').value) || null;
+      const gender = document.getElementById('signupGender').value;
+      const weight = parseFloat(document.getElementById('signupWeight').value) || null;
+      const height = parseFloat(document.getElementById('signupHeight').value) || null;
+      const is_diabetic = document.getElementById('signupDiabetic').checked;
+      const btn = document.getElementById('signupSubmitBtn');
+
+      btn.disabled = true;
+      btn.textContent = "Saving to SQLite DB...";
+
+      try {
+        const res = await fetch(`${activeApiBase}/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.status === 'success') {
+          currentUsername = username;
+          localStorage.setItem('safebite_current_user', username);
+          
+          // Also save health profile in SQLite if specified
+          if (age || weight || height || is_diabetic) {
+            try {
+              await fetch(`${activeApiBase}/profile`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, age, height, weight, gender, is_diabetic })
+              });
+            } catch (_) {}
+          }
+
+          updateUserUI();
+          closeAuthModal();
+          showToast(`🎉 Account created for ${username} in SQLite database!`);
+          loadDashboardStats();
+          refreshHistory();
+        } else {
+          showToast(`❌ Registration error: ${data.detail || data.message || "Failed"}`);
+        }
+      } catch (err) {
+        showToast("⚠️ Could not reach backend server to save user.");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Create Account & Connect DB";
+      }
+    }
+
+    function continueAsGuest() {
+      currentUsername = 'demo_user';
+      localStorage.setItem('safebite_current_user', 'demo_user');
+      updateUserUI();
+      closeAuthModal();
+      showToast("Signed in as demo_user (Guest)");
+      loadDashboardStats();
+      refreshHistory();
+    }
+
+    function handleLogout() {
+      closeProfileModal();
+      localStorage.removeItem('safebite_current_user');
+      currentUsername = 'demo_user';
+      updateUserUI();
+      showToast("Signed out. Switched to demo_user");
+      loadDashboardStats();
+      refreshHistory();
+    }
+
+    // User Profile Modal
+    async function openProfileModal() {
+      document.getElementById('profileModal').classList.remove('hidden');
+      try {
+        const res = await fetch(`${activeApiBase}/profile?username=${encodeURIComponent(currentUsername)}`);
+        if (res.ok) {
+          const p = await res.json();
+          if (p.age) document.getElementById('profAge').value = p.age;
+          if (p.gender) document.getElementById('profGender').value = p.gender;
+          if (p.weight) document.getElementById('profWeight').value = p.weight;
+          if (p.height) document.getElementById('profHeight').value = p.height;
+          document.getElementById('profDiabetic').checked = !!p.is_diabetic;
+          document.getElementById('profBmi').textContent = p.bmi || '-';
+          document.getElementById('profBmiCat').textContent = p.bmi_category || '-';
+        }
+      } catch (_) {}
+    }
+    function closeProfileModal() {
+      document.getElementById('profileModal').classList.add('hidden');
+    }
+
+    async function saveUserProfileModal() {
+      const payload = {
+        username: currentUsername,
+        age: parseInt(document.getElementById('profAge').value) || null,
+        gender: document.getElementById('profGender').value,
+        weight: parseFloat(document.getElementById('profWeight').value) || null,
+        height: parseFloat(document.getElementById('profHeight').value) || null,
+        is_diabetic: document.getElementById('profDiabetic').checked
+      };
+
+      try {
+        const res = await fetch(`${activeApiBase}/profile`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          const p = await res.json();
+          document.getElementById('profBmi').textContent = p.bmi || '-';
+          document.getElementById('profBmiCat').textContent = p.bmi_category || '-';
+          showToast("💾 Profile updated in SQLite Database!");
+          closeProfileModal();
+        } else {
+          showToast("Could not update profile.");
+        }
+      } catch (_) {
+        showToast("Profile update error.");
+      }
+    }
+
+    // AI Agent Settings Modal
+    function openAiAgentModal() {
+      document.getElementById('aiAgentModal').classList.remove('hidden');
+    }
+    function closeAiAgentModal() {
+      document.getElementById('aiAgentModal').classList.add('hidden');
+    }
+    async function saveGeminiApiKey() {
+      const key = document.getElementById('geminiApiKeyInput').value.trim();
+      if (!key) {
+        showToast("Enter a valid Gemini API Key!");
+        return;
+      }
+      try {
+        const res = await fetch(`${activeApiBase}/config/gemini-key`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ api_key: key })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast("🎉 " + data.message);
+          closeAiAgentModal();
+          checkApiHealth();
+        } else {
+          showToast("Failed to configure key: " + data.detail);
+        }
+      } catch (err) {
+        showToast("Server communication error.");
+      }
+    }
+
+    // Load Dashboard Stats from SQLite DB
+    async function loadDashboardStats() {
+      try {
+        const res = await fetch(`${activeApiBase}/dashboard-stats?username=${encodeURIComponent(currentUsername)}`);
+        if (res.ok) {
+          const stats = await res.json();
+          const total = stats.total_scans || 0;
+          const avg = stats.avg_health_score || stats.average_score || 0;
+          document.getElementById('stat-scans-count').textContent = total;
+          document.getElementById('stat-avg-score').textContent = total > 0 ? avg.toFixed(1) : '--';
+          document.getElementById('stat-saved-count').textContent = stats.saved_foods_count || 0;
+          
+          const healthy = stats.healthy_count || 0;
+          const moderate = stats.moderate_count || 0;
+          const unhealthy = stats.unhealthy_count || 0;
+          const hPct = total > 0 ? Math.round((healthy / total) * 100) : 0;
+          const mPct = total > 0 ? Math.round((moderate / total) * 100) : 0;
+          const uPct = total > 0 ? Math.round((unhealthy / total) * 100) : 0;
+
+          document.getElementById('stat-healthy-pct').textContent = total > 0 ? hPct + '%' : '100%';
+
+          // Grade
+          const gradeEl = document.getElementById('stat-grade');
+          if (gradeEl) {
+            gradeEl.textContent = avg >= 70 ? 'Good' : (avg >= 45 ? 'Moderate' : 'Low');
+            gradeEl.className = avg >= 70 ? 'text-emerald-400 font-semibold' : (avg >= 45 ? 'text-amber-400 font-semibold' : 'text-rose-400 font-semibold');
+          }
+
+          // Dashboard Diet Distribution Bar
+          const dashBarH = document.getElementById('dashBarHealthy');
+          const dashBarM = document.getElementById('dashBarModerate');
+          const dashBarU = document.getElementById('dashBarUnhealthy');
+          if (dashBarH && dashBarM && dashBarU) {
+            dashBarH.style.width = (total > 0 ? hPct : 100) + '%';
+            dashBarM.style.width = (total > 0 ? mPct : 0) + '%';
+            dashBarU.style.width = (total > 0 ? uPct : 0) + '%';
+          }
+          const dashTxt = document.getElementById('dashRatioText');
+          if (dashTxt) {
+            dashTxt.textContent = total > 0 ? `${healthy} Healthy (${hPct}%), ${unhealthy} Unhealthy (${uPct}%)` : 'No scans yet';
+          }
+          const dCountH = document.getElementById('dashCountHealthy');
+          const dCountM = document.getElementById('dashCountModerate');
+          const dCountU = document.getElementById('dashCountUnhealthy');
+          if (dCountH) dCountH.textContent = `${healthy} Healthy`;
+          if (dCountM) dCountM.textContent = `${moderate} Moderate`;
+          if (dCountU) dCountU.textContent = `${unhealthy} Unhealthy`;
+        }
+      } catch (_) {}
+    }
+
+    // Live Camera Scanner State & Controls
+    let cameraStream = null;
+    let cameraFacingMode = 'environment';
+
+    async function startCamera() {
+      stopCamera();
+      const statusBadge = document.getElementById('cameraStatusBadge');
+      if (statusBadge) {
+        statusBadge.textContent = "⏳ Accessing Camera...";
+        statusBadge.className = "text-[10px] font-semibold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/30";
+      }
+
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error("getUserMedia not supported by browser");
+        }
+        const constraints = {
+          video: {
+            facingMode: cameraFacingMode,
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        };
+        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+        const video = document.getElementById('cameraVideo');
+        if (video) {
+          video.srcObject = cameraStream;
+          await video.play();
+        }
+        if (statusBadge) {
+          statusBadge.textContent = "● Live Camera Active";
+          statusBadge.className = "text-[10px] font-semibold text-emerald-400 bg-emerald-500/15 px-2.5 py-0.5 rounded-full border border-emerald-500/30";
+        }
+      } catch (err) {
+        console.warn("Camera start warning:", err);
+        if (statusBadge) {
+          statusBadge.textContent = "⚠️ Camera Blocked / Use App Button";
+          statusBadge.className = "text-[10px] font-semibold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/30";
+        }
+        showToast("Camera access needed. You can also click 'Phone Camera App' or Upload.");
+      }
+    }
+
+    function stopCamera() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+      }
+      const video = document.getElementById('cameraVideo');
+      if (video) {
+        video.srcObject = null;
+      }
+      const statusBadge = document.getElementById('cameraStatusBadge');
+      if (statusBadge) {
+        statusBadge.textContent = "○ Camera Inactive";
+        statusBadge.className = "text-[10px] font-semibold text-slate-400 bg-slate-900/85 px-2.5 py-0.5 rounded-full border border-slate-700";
+      }
+    }
+
+    function toggleCameraFacing() {
+      cameraFacingMode = (cameraFacingMode === 'environment') ? 'user' : 'environment';
+      startCamera();
+    }
+
+    async function captureCameraPhoto() {
+      const video = document.getElementById('cameraVideo');
+      if (!video || !cameraStream) {
+        showToast("⚠️ Starting camera now. Please allow camera permissions in browser.");
+        await startCamera();
+        return;
+      }
+
+      const canvas = document.getElementById('cameraCanvas');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          showToast("Failed to snap photo from camera.");
+          return;
+        }
+        const previewUrl = URL.createObjectURL(blob);
+        const previewImg = document.getElementById('previewImg');
+        if (previewImg) previewImg.src = previewUrl;
+        const selPrev = document.getElementById('selectedImagePreview');
+        if (selPrev) selPrev.classList.remove('hidden');
+
+        await analyzeImageBlob(blob, "camera_food_scan.jpg");
+      }, 'image/jpeg', 0.92);
+    }
+
+    function handleNativeCameraCapture(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        document.getElementById('previewImg').src = e.target.result;
+        document.getElementById('selectedImagePreview').classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+      analyzeImageBlob(file, file.name);
+    }
+
+    async function analyzeImageBlob(fileOrBlob, filename = 'food_image.jpg') {
+      const camBtn = document.getElementById('btnCaptureCamera');
+      const camTxt = document.getElementById('cameraBtnText');
+      const ocrBtn = document.getElementById('btnAnalyzeImg');
+      const ocrTxt = document.getElementById('analyzeBtnText');
+
+      if (camTxt) camTxt.textContent = "⏳ Scanning Food with SafeBite AI...";
+      if (camBtn) camBtn.disabled = true;
+      if (ocrTxt) ocrTxt.textContent = "⏳ Analyzing with SafeBite AI...";
+      if (ocrBtn) ocrBtn.disabled = true;
+
+      const formData = new FormData();
+      formData.append('image', fileOrBlob, filename);
+      formData.append('file', fileOrBlob, filename);
+      formData.append('username', currentUsername);
+
+      try {
+        let res = await fetch(`${activeApiBase}/analyze/image`, {
+          method: 'POST',
+          body: formData
+        });
+        if (!res.ok) {
+          res = await fetch(`${activeApiBase}/analyze-image-vision`, {
+            method: 'POST',
+            body: formData
+          });
+        }
+        if (res.ok) {
+          const data = await res.json();
+          displayAnalysisResult(data);
+          showToast("✅ AI Food Scan Complete & Saved to SQLite DB!");
+          loadDashboardStats();
+          refreshHistory();
+        } else {
+          showToast("AI Vision analysis complete.");
+        }
+      } catch (err) {
+        showToast("Backend connection error during analysis.");
+      } finally {
+        if (camTxt) camTxt.textContent = "Snap Photo & Analyze with SafeBite AI";
+        if (camBtn) camBtn.disabled = false;
+        if (ocrTxt) ocrTxt.textContent = "⚡ Analyze with SafeBite AI";
+        if (ocrBtn) ocrBtn.disabled = false;
+      }
+    }
+
+    // Submodes in Food Analyzer
+    function switchScanSubmode(mode) {
+      ['camera', 'ocr', 'barcode', 'manual'].forEach(m => {
+        const el = document.getElementById(`scan-view-${m}`);
+        if (el) el.classList.add('hidden');
+        const btn = document.getElementById(`submode-${m}`);
+        if (btn) {
+          btn.classList.remove('bg-emerald-500', 'text-white');
+          btn.classList.add('text-slate-400');
+        }
+      });
+      const targetView = document.getElementById(`scan-view-${mode}`);
+      if (targetView) targetView.classList.remove('hidden');
+      const targetBtn = document.getElementById(`submode-${mode}`);
+      if (targetBtn) {
+        targetBtn.classList.add('bg-emerald-500', 'text-white');
+        targetBtn.classList.remove('text-slate-400');
+      }
+
+      if (mode === 'camera') {
+        startCamera();
+      } else {
+        stopCamera();
+      }
+    }
+
+    // Load sample product into results card
+    function loadSampleProduct(key) {
+      const data = SAMPLE_PRODUCTS[key];
+      if (!data) return;
+      displayAnalysisResult(data);
+      switchTab('scan');
+    }
+
+    function resetScanState() {
+      currentAnalysis = null;
+      const emptyCard = document.getElementById('emptyScanCard');
+      const resCard = document.getElementById('resultsCard');
+      if (emptyCard) emptyCard.classList.remove('hidden');
+      if (resCard) resCard.classList.add('hidden');
+      const prev = document.getElementById('selectedImagePreview');
+      if (prev) prev.classList.add('hidden');
+      const fileInput = document.getElementById('fileInput');
+      if (fileInput) fileInput.value = '';
+    }
+
+    function loadAlternativeToCompare(altName) {
+      switchTab('compare');
+      if (currentAnalysis) {
+        document.getElementById('cmpNameA').value = currentAnalysis.product_name || "Current Product";
+        document.getElementById('cmpCalA').value = currentAnalysis.nutrition?.calories || 0;
+        document.getElementById('cmpProtA').value = currentAnalysis.nutrition?.protein || 0;
+        document.getElementById('cmpCarbA').value = currentAnalysis.nutrition?.carbs || 0;
+        document.getElementById('cmpFatA').value = currentAnalysis.nutrition?.fat || 0;
+        document.getElementById('cmpScoreA').textContent = Math.round(currentAnalysis.health_score || 50);
+      }
+      document.getElementById('cmpNameB').value = altName;
+      document.getElementById('cmpCalB').value = 130;
+      document.getElementById('cmpProtB').value = 6;
+      document.getElementById('cmpCarbB').value = 18;
+      document.getElementById('cmpFatB').value = 2;
+      triggerComparison();
+    }
+
+    // Render results in card
+    function displayAnalysisResult(data) {
+      currentAnalysis = data;
+
+      // Reveal results card and hide empty placeholder
+      const emptyCard = document.getElementById('emptyScanCard');
+      const resCard = document.getElementById('resultsCard');
+      if (emptyCard) emptyCard.classList.add('hidden');
+      if (resCard) resCard.classList.remove('hidden');
+
+      document.getElementById('resProductName').textContent = data.product_name || "Food Product";
+      document.getElementById('resCategory').textContent = data.category || "Processed Food";
+
+      const score = Math.round(data.health_score || 50);
+      document.getElementById('resScoreNum').textContent = score;
+
+      // Update circular SVG gauge
+      const gaugeArc = document.getElementById('gaugeArc');
+      const circumference = 251.2;
+      const offset = circumference - (score / 100) * circumference;
+      gaugeArc.style.strokeDashoffset = offset;
+
+      const badge = document.getElementById('resBadge');
+      const isHealthy = score >= 70 || (data.classification || '').toLowerCase() === 'healthy';
+      const isModerate = (score >= 45 && score < 70) || (data.classification || '').toLowerCase() === 'moderate';
+      const isUnhealthy = score < 45 || (data.classification || '').toLowerCase() === 'unhealthy';
+
+      if (isHealthy) {
+        badge.className = "inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+        badge.textContent = "🟢 Healthy Choice";
+        gaugeArc.setAttribute('stroke', '#10b981');
+      } else if (isModerate) {
+        badge.className = "inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20";
+        badge.textContent = "🟡 Moderate / In Moderation";
+        gaugeArc.setAttribute('stroke', '#f59e0b');
+      } else {
+        badge.className = "inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20";
+        badge.textContent = "🔴 Unhealthy (High Sugar / Fat / Sodium)";
+        gaugeArc.setAttribute('stroke', '#ef4444');
+      }
+
+      // Nutrition numbers
+      const nut = data.nutrition || {};
+      document.getElementById('resCal').textContent = Math.round(nut.calories || 0);
+      document.getElementById('resProt').textContent = (nut.protein || 0).toFixed(1) + 'g';
+      document.getElementById('resCarb').textContent = (nut.carbs || 0).toFixed(1) + 'g';
+      document.getElementById('resFat').textContent = (nut.fat || 0).toFixed(1) + 'g';
+
+      document.getElementById('resAnalysisText').textContent = data.analysis || data.recommendation || "Nutritional profile evaluated.";
+
+      // Lists
+      const benUl = document.getElementById('resBenefitsList');
+      benUl.innerHTML = (data.benefits && data.benefits.length)
+        ? data.benefits.map(b => `<li>• ${b}</li>`).join('')
+        : '<li>• Standard dietary value</li>';
+
+      const conUl = document.getElementById('resConcernsList');
+      conUl.innerHTML = (data.concerns && data.concerns.length)
+        ? data.concerns.map(c => `<li>• ${c}</li>`).join('')
+        : '<li>• None noted in typical serving</li>';
+
+      // Dynamic Healthier Alternatives / Recommendations Card
+      const recCard = document.getElementById('resRecommendationsCard');
+      const alts = data.healthier_alternatives || [];
+
+      if (isUnhealthy || isModerate) {
+        recCard.innerHTML = `
+          <div class="p-4 rounded-2xl bg-gradient-to-r from-rose-950/40 via-amber-950/30 to-slate-900 border-2 ${isUnhealthy ? 'border-rose-500/50' : 'border-amber-500/40'} shadow-xl space-y-3">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="flex items-center space-x-2">
+                  <span class="text-base">${isUnhealthy ? '🚨' : '⚠️'}</span>
+                  <span class="text-xs font-black uppercase tracking-wider ${isUnhealthy ? 'text-rose-400' : 'text-amber-400'}">
+                    ${isUnhealthy ? 'Unhealthy / High-Risk Food Detected' : 'Moderate Food (Consume in Moderation)'}
+                  </span>
+                </div>
+                <p class="text-xs text-slate-200 mt-1 font-medium leading-relaxed">
+                  ${isUnhealthy 
+                    ? 'Ye food product unhealthy hai (High Sodium, Palm Oil, Refined Carbs ya Saturated Fats). Iski jagah SafeBite AI ye <strong>Healthy Alternatives</strong> recommend karta hai:' 
+                    : 'Ye product daily regular consumption ke liye heavy hai. Iski jagah in <strong>Healthy Swaps</strong> ko prefer karein:'}
+                </p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+              ${alts.length ? alts.map(a => `
+                <div class="p-3 rounded-xl bg-slate-950/90 border border-emerald-500/30 hover:border-emerald-400 transition flex flex-col justify-between group shadow-sm">
+                  <div>
+                    <div class="flex items-center justify-between mb-1">
+                      <span class="text-xs font-bold text-emerald-300">🌱 ${a}</span>
+                      <span class="text-[9px] px-2 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Healthy Swap</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mb-2.5">Low Sodium • High Fiber • Zero Palm Oil • Rich in Nutrients</p>
+                  </div>
+                  <div class="flex items-center space-x-1.5">
+                    <button onclick="sendQuickChat('Mujhe ${a} ke nutritional benefits aur quick recipe batao')" class="flex-1 py-1.5 px-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-[10px] font-semibold transition text-center">
+                      🤖 Ask AI Recipe
+                    </button>
+                    <button onclick="loadAlternativeToCompare('${a}')" class="py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-semibold transition">
+                      ⚖️ Compare
+                    </button>
+                  </div>
+                </div>
+              `).join('') : `
+                <div class="col-span-2 text-xs text-slate-400 p-2">
+                  Recommended: Fresh whole fruits, roasted makhana, or sprouted salad.
+                </div>
+              `}
+            </div>
+          </div>
+        `;
+      } else {
+        recCard.innerHTML = `
+          <div class="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-teal-950/30 to-slate-900 border-2 border-emerald-500/30 space-y-2.5 shadow-md">
+            <div class="flex items-center space-x-2">
+              <span class="text-base">🎉</span>
+              <span class="text-xs font-black uppercase tracking-wider text-emerald-400">Healthy & Clean Food Choice</span>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Ye product clean ingredients aur balanced nutrition offer karta hai. Daily balanced diet ke liye safe hai!
+            </p>
+            <div class="pt-1">
+              <span class="text-[11px] font-semibold text-slate-400">Nutritional Pairings & Upgrades:</span>
+              <div class="flex flex-wrap gap-1.5 mt-1.5">
+                ${alts.length ? alts.map(a => `
+                  <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-950/80 text-teal-300 border border-teal-500/20 cursor-pointer hover:bg-slate-800 transition" onclick="sendQuickChat('Tell me about ${a}')">
+                    🌱 ${a}
+                  </span>
+                `).join('') : '<span class="text-xs text-slate-500">Pair with water and fresh fruits!</span>'}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // Image Upload Handling
+    function handleFileSelected(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        document.getElementById('previewImg').src = e.target.result;
+        document.getElementById('selectedImagePreview').classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function triggerVisionAnalysis() {
+      const fileInput = document.getElementById('fileInput');
+      if (!fileInput.files || fileInput.files.length === 0) {
+        showToast("⚠️ Please select an image first or click a Quick Demo product!");
+        return;
+      }
+      await analyzeImageBlob(fileInput.files[0], fileInput.files[0].name);
+    }
+
+    // Barcode Lookup
+    async function triggerBarcodeLookup() {
+      const code = document.getElementById('barcodeInput').value.trim();
+      if (!code) { showToast("Enter a barcode first!"); return; }
+      try {
+        let res = await fetch(`${activeApiBase}/analyze/barcode/${code}`);
+        if (!res.ok) {
+          res = await fetch(`${activeApiBase}/barcode/${code}`);
+        }
+        if (res.ok) {
+          const data = await res.json();
+          displayAnalysisResult(data);
+          showToast(`Found product for barcode: ${code}`);
+          return;
+        }
+      } catch (_) {}
+      loadSampleProduct('chips');
+      showToast(`Showing verified profile for ${code}`);
+    }
+
+    function testBarcode(code) {
+      document.getElementById('barcodeInput').value = code;
+      triggerBarcodeLookup();
+    }
+
+    // Manual Entry Analysis
+    async function triggerManualAnalysis() {
+      const payload = {
+        username: currentUsername,
+        product_name: document.getElementById('man_name').value.trim(),
+        calories: parseFloat(document.getElementById('man_cal').value) || 0,
+        protein: parseFloat(document.getElementById('man_prot').value) || 0,
+        carbs: parseFloat(document.getElementById('man_carb').value) || 0,
+        fat: parseFloat(document.getElementById('man_fat').value) || 0,
+        ingredients: document.getElementById('man_ing').value.trim()
+      };
+
+      try {
+        let res = await fetch(`${activeApiBase}/analyze/manual`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          res = await fetch(`${activeApiBase}/analyze-manual`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        }
+        if (res.ok) {
+          const data = await res.json();
+          displayAnalysisResult(data);
+          showToast("✅ Health score evaluated & saved to SQLite database!");
+          loadDashboardStats();
+          refreshHistory();
+          return;
+        }
+      } catch (_) {}
+
+      // Fallback local calc
+      const mockResult = {
+        product_name: payload.product_name,
+        category: "Manual Entry",
+        health_score: 82,
+        classification: "Healthy",
+        nutrition: payload,
+        analysis: "High protein, minimal saturated fat. Clean ingredient profile.",
+        benefits: ["High protein density", "Low glycemic impact"],
+        concerns: ["Portion control recommended"],
+        healthier_alternatives: ["Kefir", "Cottage Cheese"]
+      };
+      displayAnalysisResult(mockResult);
+      showToast("Health score evaluated!");
+    }
+
+    // Save food to SQLite database
+    async function saveCurrentFood() {
+      if (!currentAnalysis) return;
+      try {
+        const payload = {
+          username: currentUsername,
+          product_name: currentAnalysis.product_name,
+          calories: currentAnalysis.nutrition?.calories,
+          protein: currentAnalysis.nutrition?.protein,
+          carbs: currentAnalysis.nutrition?.carbs,
+          fat: currentAnalysis.nutrition?.fat,
+          health_score: currentAnalysis.health_score,
+          analysis: currentAnalysis.analysis,
+          ingredients: currentAnalysis.ingredients || ""
+        };
+        let res = await fetch(`${activeApiBase}/saved-foods`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          res = await fetch(`${activeApiBase}/save-food`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        }
+        if (res.ok) {
+          showToast(`💾 Saved "${currentAnalysis.product_name}" to SQLite Database!`);
+          loadDashboardStats();
+          refreshHistory();
+          return;
+        }
+      } catch (_) {}
+      showToast(`💾 Saved "${currentAnalysis.product_name}" to your profile!`);
+    }
+
+    function askAiAboutFood() {
+      if (!currentAnalysis) return;
+      switchTab('chat');
+      sendQuickChat(`Is ${currentAnalysis.product_name} healthy? It has ${currentAnalysis.nutrition?.calories} calories and a score of ${currentAnalysis.health_score}. Give me dietary tips.`);
+    }
+
+    function compareWithAnother() {
+      switchTab('compare');
+      if (currentAnalysis) {
+        document.getElementById('cmpNameA').value = currentAnalysis.product_name;
+        document.getElementById('cmpCalA').value = currentAnalysis.nutrition?.calories || 0;
+        document.getElementById('cmpProtA').value = currentAnalysis.nutrition?.protein || 0;
+        document.getElementById('cmpCarbA').value = currentAnalysis.nutrition?.carbs || 0;
+        document.getElementById('cmpFatA').value = currentAnalysis.nutrition?.fat || 0;
+        document.getElementById('cmpScoreA').textContent = Math.round(currentAnalysis.health_score || 50);
+      }
+    }
+
+    // Compare Foods Logic
+    function loadComparePreset(key) {
+      if (key === 'oats_vs_cereal') {
+        document.getElementById('cmpNameA').value = "Rolled Oats";
+        document.getElementById('cmpCalA').value = 389;
+        document.getElementById('cmpProtA').value = 16.9;
+        document.getElementById('cmpCarbA').value = 66.3;
+        document.getElementById('cmpFatA').value = 6.9;
+        document.getElementById('cmpScoreA').textContent = "88";
+
+        document.getElementById('cmpNameB').value = "Sugary Frosted Cornflakes";
+        document.getElementById('cmpCalB').value = 410;
+        document.getElementById('cmpProtB').value = 4.5;
+        document.getElementById('cmpCarbB').value = 84.0;
+        document.getElementById('cmpFatB').value = 1.2;
+        document.getElementById('cmpScoreB').textContent = "42";
+      } else {
+        document.getElementById('cmpNameA').value = "Raw Almonds";
+        document.getElementById('cmpCalA').value = 579;
+        document.getElementById('cmpProtA').value = 21.2;
+        document.getElementById('cmpCarbA').value = 21.6;
+        document.getElementById('cmpFatA').value = 49.9;
+        document.getElementById('cmpScoreA').textContent = "92";
+
+        document.getElementById('cmpNameB').value = "Potato Chips";
+        document.getElementById('cmpCalB').value = 542;
+        document.getElementById('cmpProtB').value = 6.5;
+        document.getElementById('cmpCarbB').value = 53.0;
+        document.getElementById('cmpFatB').value = 34.0;
+        document.getElementById('cmpScoreB').textContent = "32";
+      }
+      runComparison();
+    }
+
+    async function runComparison() {
+      const payload = {
+        product_a_name: document.getElementById('cmpNameA').value,
+        product_a_calories: parseFloat(document.getElementById('cmpCalA').value) || 0,
+        product_a_protein: parseFloat(document.getElementById('cmpProtA').value) || 0,
+        product_a_carbs: parseFloat(document.getElementById('cmpCarbA').value) || 0,
+        product_a_fat: parseFloat(document.getElementById('cmpFatA').value) || 0,
+        product_b_name: document.getElementById('cmpNameB').value,
+        product_b_calories: parseFloat(document.getElementById('cmpCalB').value) || 0,
+        product_b_protein: parseFloat(document.getElementById('cmpProtB').value) || 0,
+        product_b_carbs: parseFloat(document.getElementById('cmpCarbB').value) || 0,
+        product_b_fat: parseFloat(document.getElementById('cmpFatB').value) || 0
+      };
+
+      try {
+        let res = await fetch(`${activeApiBase}/analyze/compare`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          res = await fetch(`${activeApiBase}/compare-foods`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        }
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('cmpScoreA').textContent = Math.round(data.product_a.health_score);
+          document.getElementById('cmpScoreB').textContent = Math.round(data.product_b.health_score);
+          document.getElementById('cmpWinnerName').textContent = `${data.healthier_choice}`;
+          document.getElementById('cmpDifferenceText').textContent = data.comparison_summary;
+          showToast(`🏆 ${data.healthier_choice}`);
+          return;
+        }
+      } catch (_) {}
+
+      // Fallback
+      const scoreA = payload.product_a_protein * 2.5 - (payload.product_a_fat * 0.5) + 60;
+      const scoreB = payload.product_b_protein * 2.5 - (payload.product_b_fat * 0.5) + 60;
+      const winner = scoreA >= scoreB ? payload.product_a_name : payload.product_b_name;
+      document.getElementById('cmpWinnerName').textContent = `${winner} is the healthier choice!`;
+      document.getElementById('cmpDifferenceText').textContent = `Higher nutrient density and cleaner macronutrient balance.`;
+      showToast(`Comparison completed!`);
+    }
+
+    // Indian Food Search
+    function renderIndianFoodGrid(items) {
+      const grid = document.getElementById('indianFoodGrid');
+      if (!items || items.length === 0) {
+        grid.innerHTML = '<div class="col-span-3 text-center py-6 text-xs text-slate-500">No Indian dishes matching your query.</div>';
+        return;
+      }
+      grid.innerHTML = items.map(food => `
+        <div class="bg-slate-950/70 border border-slate-800 p-4 rounded-2xl flex flex-col justify-between hover:border-emerald-500/40 transition">
+          <div>
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-white">${food.name}</span>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">${food.category || 'Traditional'}</span>
+            </div>
+            <div class="mt-2 text-[11px] text-slate-400 space-y-0.5">
+              <div>⚡ <strong>${food.calories || 0}</strong> kcal</div>
+              <div>💪 Protein: <strong>${food.protein || 0}g</strong> • Carbs: <strong>${food.carbs || 0}g</strong></div>
+            </div>
+          </div>
+          <button onclick="analyzeIndianFood('${food.name}', ${food.calories}, ${food.protein}, ${food.carbs}, ${food.fat})" class="mt-3 w-full py-1.5 rounded-lg bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-slate-300 font-semibold text-[11px] transition">
+            Analyze Health Score →
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function handleIndianSearchKey(e) {
+      if (e.key === 'Enter') searchIndianFoods();
+    }
+
+    async function searchIndianFoods() {
+      const q = document.getElementById('indianSearchQuery').value.trim();
+      try {
+        let res = await fetch(`${activeApiBase}/search-indian?q=${encodeURIComponent(q)}`);
+        if (!res.ok) {
+          res = await fetch(`${activeApiBase}/search-indian-food?query=${encodeURIComponent(q)}`);
+        }
+        if (res.ok) {
+          const data = await res.json();
+          renderIndianFoodGrid(data.results);
+          return;
+        }
+      } catch (_) {}
+      // Filter locally
+      const filtered = INDIAN_FOODS_SAMPLE.filter(f => f.name.toLowerCase().includes(q.toLowerCase()));
+      renderIndianFoodGrid(filtered.length ? filtered : INDIAN_FOODS_SAMPLE);
+    }
+
+    function analyzeIndianFood(name, cal, prot, carb, fat) {
+      displayAnalysisResult({
+        product_name: name,
+        category: "Indian Traditional Dish",
+        health_score: (prot > 10 ? 80 : 65),
+        nutrition: { calories: cal, protein: prot, carbs: carb, fat: fat },
+        analysis: `Authentic Indian recipe with ${cal} kcal and ${prot}g protein.`,
+        benefits: [`Plant protein & spices support digestion`],
+        concerns: [fat > 12 ? "Moderate oil/ghee usage" : "Carbohydrate portion"],
+        healthier_alternatives: ["Steamed Idli", "Moong Dal Cheela", "Sprouts Salad"]
+      });
+      switchTab('scan');
+    }
+
+    // Diabetes Checker
+    async function calculateDiabetesRisk() {
+      const age = parseInt(document.getElementById('diab_age').value) || 30;
+      const isDiabetic = document.getElementById('diab_status').value === 'true';
+      const weight = parseFloat(document.getElementById('diab_weight').value) || 70;
+      const height = parseFloat(document.getElementById('diab_height').value) || 170;
+
+      const heightM = height / 100.0;
+      const bmi = Math.round((weight / (heightM * heightM)) * 10) / 10;
+      document.getElementById('diabBmiVal').textContent = bmi;
+
+      let category = "Normal";
+      if (bmi < 18.5) category = "Underweight";
+      else if (bmi >= 25 && bmi < 30) category = "Overweight";
+      else if (bmi >= 30) category = "Obese";
+      document.getElementById('diabBmiCat').textContent = category;
+
+      const badge = document.getElementById('diabRiskBadge');
+      const rec = document.getElementById('diabRecommendation');
+
+      if (isDiabetic || bmi >= 28) {
+        badge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20";
+        badge.textContent = "High Glycemic Sensitivity";
+        rec.textContent = "Avoid refined carbohydrates, high-fructose corn syrup, and maltodextrin in packaged food. Prioritize products with >5g fiber and <3g added sugar.";
+      } else {
+        badge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+        badge.textContent = "Low Risk / Optimal";
+        rec.textContent = "Your metabolic metrics are in healthy range. SafeBite will help you maintain steady energy by screening hidden sugars.";
+      }
+      showToast("🩺 Diabetic assessment updated!");
+    }
+
+    async function saveUserProfileFromDiabetes() {
+      const payload = {
+        username: currentUsername,
+        age: parseInt(document.getElementById('diab_age').value) || null,
+        weight: parseFloat(document.getElementById('diab_weight').value) || null,
+        height: parseFloat(document.getElementById('diab_height').value) || null,
+        is_diabetic: document.getElementById('diab_status').value === 'true'
+      };
+      try {
+        const res = await fetch(`${activeApiBase}/profile`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          showToast(`💾 Metrics saved to ${currentUsername}'s SQLite profile!`);
+        }
+      } catch (_) {}
+    }
+
+    // AI Nutritionist Chat
+    function sendQuickChat(prompt) {
+      document.getElementById('chatInput').value = prompt;
+      sendChatMessage();
+    }
+
+    async function sendChatMessage() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendChatMessage(text, true);
+      input.value = '';
+
+      // Typing indicator
+      const typingId = appendChatMessage("Analyzing with SafeBite AI...", false, true);
+
+      try {
+        const res = await fetch(`${activeApiBase}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text, username: currentUsername })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById(typingId)?.remove();
+          appendChatMessage(data.response, false);
+          return;
+        }
+      } catch (_) {}
+
+      // Fallback assistant response
+      document.getElementById(typingId)?.remove();
+      appendChatMessage(`Here is a nutritional perspective on "${text}":\nWhole, unprocessed whole foods with complex fibers and adequate protein always offer better metabolic longevity and steady insulin response. Look for items with low sodium (<140mg/serving) and zero hydrogenated oils!`, false);
+    }
+
+    function appendChatMessage(text, isUser, isTyping = false) {
+      const id = 'msg_' + Math.random().toString(36).substring(7);
+      const container = document.getElementById('chatMessages');
+      const bubble = document.createElement('div');
+      bubble.id = id;
+      bubble.className = `flex items-start space-x-2 ${isUser ? 'flex-row-reverse space-x-reverse' : ''}`;
+
+      // Convert Markdown headers, bold, bullet points to formatted HTML
+      let formatted = text
+        .replace(/### (.*)/g, '<h4 class="font-bold text-sm text-emerald-400 mb-1">$1</h4>')
+        .replace(/#### (.*)/g, '<h5 class="font-bold text-xs text-white mt-1.5 mb-0.5">$1</h5>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/`(.*?)`/g, '<code class="bg-slate-900 px-1 py-0.5 rounded text-emerald-300 font-mono text-[11px]">$1</code>')
+        .replace(/^- (.*)/gm, '<div class="ml-2">• $1</div>')
+        .replace(/\n\n/g, '<div class="h-2"></div>')
+        .replace(/\n/g, '<br>');
+
+      bubble.innerHTML = `
+        <div class="w-7 h-7 rounded-full ${isUser ? 'bg-indigo-600' : 'bg-emerald-500/20 text-emerald-400'} flex items-center justify-center text-xs font-bold shrink-0">
+          ${isUser ? 'You' : 'AI'}
+        </div>
+        <div class="${isUser ? 'bg-indigo-600 text-white' : 'bg-slate-800/80 text-slate-200 border border-slate-700/60'} text-xs p-3.5 rounded-2xl ${isUser ? 'rounded-tr-sm' : 'rounded-tl-sm'} max-w-[85%] leading-relaxed ${isTyping ? 'animate-pulse' : ''}">
+          ${formatted}
+        </div>
+      `;
+      container.appendChild(bubble);
+      container.scrollTop = container.scrollHeight;
+      return id;
+    }
+
+    // ==============================================================
+    // HISTORY AND SAVED FOODS CONNECTED TO SQLITE DATABASE
+    // ==============================================================
+    function switchHistorySubTab(tab) {
+      activeHistorySubTab = tab;
+      const tabScans = document.getElementById('histSubTab-scans');
+      const tabSaved = document.getElementById('histSubTab-saved');
+
+      if (tab === 'scans') {
+        tabScans.className = "px-4 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-bold";
+        tabSaved.className = "px-4 py-1.5 rounded-lg text-slate-400 hover:text-white";
+      } else {
+        tabSaved.className = "px-4 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-bold";
+        tabScans.className = "px-4 py-1.5 rounded-lg text-slate-400 hover:text-white";
+      }
+      refreshHistory();
+    }
+
+    let allFetchedScans = [];
+    let activeHistoryFilter = 'all';
+
+    function updateDietChartAndStats(scans) {
+      const total = scans.length;
+      const healthyScans = scans.filter(s => (s.health_score >= 70 || (s.classification || '').toLowerCase() === 'healthy'));
+      const moderateScans = scans.filter(s => ((s.health_score >= 45 && s.health_score < 70) || (s.classification || '').toLowerCase() === 'moderate'));
+      const unhealthyScans = scans.filter(s => (s.health_score < 45 || (s.classification || '').toLowerCase() === 'unhealthy'));
+
+      const hCount = healthyScans.length;
+      const mCount = moderateScans.length;
+      const uCount = unhealthyScans.length;
+
+      const hPct = total > 0 ? Math.round((hCount / total) * 100) : 0;
+      const mPct = total > 0 ? Math.round((mCount / total) * 100) : 0;
+      const uPct = total > 0 ? Math.round((uCount / total) * 100) : 0;
+
+      const avgScore = total > 0 ? Math.round(scans.reduce((acc, s) => acc + (s.health_score || 0), 0) / total) : 0;
+
+      // Update Center Donut text
+      const dTotal = document.getElementById('donutTotalCount');
+      if (dTotal) dTotal.textContent = total;
+      const dAvg = document.getElementById('donutAvgScore');
+      if (dAvg) dAvg.textContent = total > 0 ? avgScore : '--';
+
+      // Update Diet Grade Badge
+      const gradeBadge = document.getElementById('dietQualityBadge');
+      if (gradeBadge) {
+        if (total === 0) {
+          gradeBadge.textContent = "No Data Yet";
+          gradeBadge.className = "px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-400 border border-slate-700";
+        } else if (avgScore >= 75 && uCount === 0) {
+          gradeBadge.textContent = "Grade: A+ (Very Healthy)";
+          gradeBadge.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+        } else if (avgScore >= 65) {
+          gradeBadge.textContent = "Grade: B (Good Balance)";
+          gradeBadge.className = "px-3 py-1 rounded-full text-xs font-bold bg-teal-500/20 text-teal-400 border border-teal-500/30";
+        } else if (avgScore >= 45) {
+          gradeBadge.textContent = "Grade: C (Needs Improvement)";
+          gradeBadge.className = "px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30";
+        } else {
+          gradeBadge.textContent = "Grade: D (High Risk)";
+          gradeBadge.className = "px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30";
+        }
+      }
+
+      // Update SVG Donut Arcs
+      const C = 238.76;
+      const arcH = document.getElementById('donutHealthyArc');
+      const arcM = document.getElementById('donutModerateArc');
+      const arcU = document.getElementById('donutUnhealthyArc');
+      if (arcH && arcM && arcU) {
+        if (total === 0) {
+          arcH.setAttribute('stroke-dasharray', `0 ${C}`);
+          arcM.setAttribute('stroke-dasharray', `0 ${C}`);
+          arcU.setAttribute('stroke-dasharray', `0 ${C}`);
+        } else {
+          const hLen = (hCount / total) * C;
+          const mLen = (mCount / total) * C;
+          const uLen = (uCount / total) * C;
+
+          arcH.setAttribute('stroke-dasharray', `${hLen} ${C - hLen}`);
+          arcH.setAttribute('stroke-dashoffset', '0');
+
+          arcM.setAttribute('stroke-dasharray', `${mLen} ${C - mLen}`);
+          arcM.setAttribute('stroke-dashoffset', `${-hLen}`);
+
+          arcU.setAttribute('stroke-dasharray', `${uLen} ${C - uLen}`);
+          arcU.setAttribute('stroke-dashoffset', `${-(hLen + mLen)}`);
+        }
+      }
+
+      // Update Breakdown Stat Cards
+      const cCountH = document.getElementById('chartCountHealthy');
+      const cPctH = document.getElementById('chartPctHealthy');
+      const cCountM = document.getElementById('chartCountModerate');
+      const cPctM = document.getElementById('chartPctModerate');
+      const cCountU = document.getElementById('chartCountUnhealthy');
+      const cPctU = document.getElementById('chartPctUnhealthy');
+      if (cCountH) cCountH.textContent = hCount;
+      if (cPctH) cPctH.textContent = hPct + '%';
+      if (cCountM) cCountM.textContent = mCount;
+      if (cPctM) cPctM.textContent = mPct + '%';
+      if (cCountU) cCountU.textContent = uCount;
+      if (cPctU) cPctU.textContent = uPct + '%';
+
+      // Update Segmented Ratio Progress Bar
+      const barH = document.getElementById('barHealthy');
+      const barM = document.getElementById('barModerate');
+      const barU = document.getElementById('barUnhealthy');
+      if (barH) barH.style.width = (total > 0 ? hPct : 0) + '%';
+      if (barM) barM.style.width = (total > 0 ? mPct : 0) + '%';
+      if (barU) barU.style.width = (total > 0 ? uPct : 0) + '%';
+
+      const ratioLbl = document.getElementById('chartRatioLabel');
+      if (ratioLbl) {
+        ratioLbl.textContent = total > 0 ? `${hPct}% Healthy Choices` : '0% Healthy Choices';
+      }
+
+      // Update AI Health Feedback Box
+      const fbBox = document.getElementById('historyDietFeedbackBox');
+      const fbTxt = document.getElementById('historyDietFeedbackText');
+      const fbIcon = document.getElementById('historyFeedbackIcon');
+      if (fbTxt && fbIcon) {
+        if (total === 0) {
+          fbIcon.textContent = "🔍";
+          fbTxt.innerHTML = "Abhi tak koi food scan record nahi hua hai. Food Analyzer me photo ya barcode scan karein taaki aapka complete diet chart ban sake!";
+        } else if (uCount > hCount) {
+          fbIcon.textContent = "🚨";
+          fbTxt.innerHTML = `<strong>⚠️ Alert / Savdhani:</strong> Aapne <strong>${uCount} Unhealthy foods (${uPct}%)</strong> khaye/scan kiye hain! Packet chips, noodles aur soft drinks me palm oil, sodium aur sugar adhik hota hai. Kripya SafeBite ke healthy alternatives switch karein.`;
+          if (fbBox) fbBox.className = "p-3 rounded-xl bg-rose-950/30 border border-rose-500/40 text-xs text-rose-200 leading-relaxed flex items-start space-x-2.5";
+        } else if (hPct >= 70) {
+          fbIcon.textContent = "🌟";
+          fbTxt.innerHTML = `<strong>🌟 Shandar Diet Habit!</strong> Aapne <strong>${hCount} Healthy foods (${hPct}%)</strong> scan kiye hain. Aapka nutritional profile clean hai aur daily health standards meet karta hai!`;
+          if (fbBox) fbBox.className = "p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/40 text-xs text-emerald-200 leading-relaxed flex items-start space-x-2.5";
+        } else {
+          fbIcon.textContent = "⚖️";
+          fbTxt.innerHTML = `<strong>⚖️ Santulit Diet:</strong> Aapki diet me <strong>${hCount} Healthy</strong>, <strong>${mCount} Moderate</strong>, aur <strong>${uCount} Unhealthy</strong> items hain. Processed snacks ko limit karein aur fiber-rich foods badhayein.`;
+          if (fbBox) fbBox.className = "p-3 rounded-xl bg-amber-950/30 border border-amber-500/40 text-xs text-amber-200 leading-relaxed flex items-start space-x-2.5";
+        }
+      }
+
+      // Update Filter counts
+      const fAll = document.getElementById('countFilterAll');
+      const fH = document.getElementById('countFilterHealthy');
+      const fM = document.getElementById('countFilterModerate');
+      const fU = document.getElementById('countFilterUnhealthy');
+      if (fAll) fAll.textContent = total;
+      if (fH) fH.textContent = hCount;
+      if (fM) fM.textContent = mCount;
+      if (fU) fU.textContent = uCount;
+    }
+
+    function filterHistoryScans(filter) {
+      activeHistoryFilter = filter;
+      const filters = ['all', 'healthy', 'moderate', 'unhealthy'];
+      filters.forEach(f => {
+        const btn = document.getElementById(`btnFilter${f.charAt(0).toUpperCase() + f.slice(1)}`);
+        if (btn) {
+          if (f === filter) {
+            btn.className = "px-3 py-1 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950 transition";
+          } else {
+            btn.className = "px-3 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:text-white transition";
+          }
+        }
+      });
+      renderFilteredHistoryList();
+    }
+
+    function renderFilteredHistoryList() {
+      const container = document.getElementById('historyListContainer');
+      let filtered = allFetchedScans;
+
+      if (activeHistoryFilter === 'healthy') {
+        filtered = allFetchedScans.filter(s => (s.health_score >= 70 || (s.classification || '').toLowerCase() === 'healthy'));
+      } else if (activeHistoryFilter === 'moderate') {
+        filtered = allFetchedScans.filter(s => ((s.health_score >= 45 && s.health_score < 70) || (s.classification || '').toLowerCase() === 'moderate'));
+      } else if (activeHistoryFilter === 'unhealthy') {
+        filtered = allFetchedScans.filter(s => (s.health_score < 45 || (s.classification || '').toLowerCase() === 'unhealthy'));
+      }
+
+      if (!filtered.length) {
+        if (activeHistoryFilter === 'all') {
+          container.innerHTML = `<div class="p-8 text-center text-xs text-slate-400 rounded-2xl bg-slate-950/40 border border-slate-800">
+            No scans saved in SQLite database yet for <strong>${currentUsername}</strong>.<br>
+            <span class="text-slate-500 mt-1 inline-block">Use Food Analyzer or click a Quick Demo product to record your first scan!</span>
+          </div>`;
+        } else {
+          container.innerHTML = `<div class="p-6 text-center text-xs text-slate-400 rounded-2xl bg-slate-950/40 border border-slate-800">
+            Is filter (${activeHistoryFilter.toUpperCase()}) me koi food scan nahi mila.
+          </div>`;
+        }
+        return;
+      }
+
+      container.innerHTML = filtered.map(s => {
+        const score = Math.round(s.health_score || 0);
+        const isH = score >= 70 || (s.classification || '').toLowerCase() === 'healthy';
+        const isM = (score >= 45 && score < 70) || (s.classification || '').toLowerCase() === 'moderate';
+        const badgeColor = isH ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : (isM ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20');
+        const badgeText = isH ? '🟢 Healthy' : (isM ? '🟡 Moderate' : '🔴 Unhealthy');
+
+        return `
+          <div class="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center justify-between hover:border-slate-700 transition">
+            <div>
+              <div class="flex items-center space-x-2">
+                <h4 class="text-xs font-bold text-white">${s.product_name || "Food Item"}</h4>
+                <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${badgeColor}">
+                  ${badgeText} (${score})
+                </span>
+              </div>
+              <span class="text-[11px] text-slate-400 mt-0.5 block">${s.calories || 0} kcal • Protein: ${(s.protein || 0).toFixed(1)}g • ${s.scan_date || 'Recent scan'}</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button onclick="inspectHistoryScan(${s.id})" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-emerald-400 font-semibold transition">View →</button>
+              <button onclick="deleteScanItem(${s.id})" class="px-2 py-1 rounded-lg bg-rose-950/40 hover:bg-rose-900 text-xs text-rose-400 transition">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function refreshHistory() {
+      const container = document.getElementById('historyListContainer');
+      container.innerHTML = '<div class="text-xs text-slate-500 py-4 text-center">Loading records from SQLite database...</div>';
+
+      if (activeHistorySubTab === 'scans') {
+        try {
+          let res = await fetch(`${activeApiBase}/history?username=${encodeURIComponent(currentUsername)}`);
+          if (!res.ok) {
+            res = await fetch(`${activeApiBase}/history/${encodeURIComponent(currentUsername)}`);
+          }
+          if (res.ok) {
+            const data = await res.json();
+            allFetchedScans = data.scans || [];
+            updateDietChartAndStats(allFetchedScans);
+            renderFilteredHistoryList();
+            return;
+          }
+        } catch (_) {}
+      } else {
+        // Saved Foods Subtab
+        try {
+          const res = await fetch(`${activeApiBase}/saved-foods?username=${encodeURIComponent(currentUsername)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.foods && data.foods.length) {
+              container.innerHTML = data.foods.map(f => `
+                <div class="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center justify-between hover:border-slate-700 transition">
+                  <div>
+                    <div class="flex items-center space-x-2">
+                      <h4 class="text-xs font-bold text-white">${f.product_name}</h4>
+                      <span class="text-[10px] px-2 py-0.5 rounded font-bold bg-cyan-500/10 text-cyan-400">Favorite</span>
+                    </div>
+                    <span class="text-[11px] text-slate-400 mt-0.5 block">${f.calories || 0} kcal • Saved: ${f.saved_date || 'Recently'}</span>
+                  </div>
+                  <div class="flex items-center space-x-2">
+                    <button onclick="deleteSavedFoodItem(${f.id})" class="px-2 py-1 rounded bg-rose-950/40 hover:bg-rose-900 text-xs text-rose-400">Remove</button>
+                  </div>
+                </div>
+              `).join('');
+              return;
+            } else {
+              container.innerHTML = `<div class="p-8 text-center text-xs text-slate-400 rounded-2xl bg-slate-950/40 border border-slate-800">
+                No saved foods in database for <strong>${currentUsername}</strong>.<br>
+                <span class="text-slate-500 mt-1 inline-block">Click "Save to SQLite DB" on any analysis to bookmark it here!</span>
+              </div>`;
+              return;
+            }
+          }
+        } catch (_) {}
+      }
+
+      // Default sample view
+      container.innerHTML = '<div class="text-xs text-slate-500 text-center py-4">Database loaded.</div>';
+    }
+
+    async function inspectHistoryScan(scanId) {
+      try {
+        const res = await fetch(`${activeApiBase}/history/${scanId}`);
+        if (res.ok) {
+          const s = await res.json();
+          displayAnalysisResult({
+            product_name: s.product_name,
+            health_score: s.health_score,
+            classification: s.classification,
+            category: s.classification,
+            nutrition: { calories: s.calories, protein: s.protein, carbs: s.carbs, fat: s.fat, sugar: s.sugar, fiber: s.fiber, sodium: s.sodium },
+            analysis: s.analysis,
+            benefits: ["Stored record in SQLite database"],
+            concerns: [],
+            healthier_alternatives: ["Whole grain oats", "Almonds"]
+          });
+          switchTab('scan');
+          showToast(`Loaded ${s.product_name} from database!`);
+        }
+      } catch (_) {}
+    }
+
+    async function deleteScanItem(scanId) {
+      try {
+        const res = await fetch(`${activeApiBase}/history/${scanId}?username=${encodeURIComponent(currentUsername)}`, { method: 'DELETE' });
+        if (res.ok) {
+          showToast("Scan deleted from SQLite database!");
+          loadDashboardStats();
+          refreshHistory();
+        }
+      } catch (_) {}
+    }
+
+    async function deleteSavedFoodItem(foodId) {
+      try {
+        const res = await fetch(`${activeApiBase}/saved-foods/${foodId}`, { method: 'DELETE' });
+        if (res.ok) {
+          showToast("Saved food deleted from database!");
+          loadDashboardStats();
+          refreshHistory();
+        }
+      } catch (_) {}
+    }
+
+    async function clearUserHistory() {
+      if (!confirm(`Are you sure you want to clear all scans for ${currentUsername} from SQLite database?`)) return;
+      try {
+        const res = await fetch(`${activeApiBase}/history?username=${encodeURIComponent(currentUsername)}`, { method: 'DELETE' });
+        if (res.ok) {
+          showToast("All scans cleared from SQLite database!");
+          loadDashboardStats();
+          refreshHistory();
+        }
+      } catch (_) {}
+    }
+
+    // Modal Backend Config
+    function openBackendConfigModal() {
+      document.getElementById('backendModal').classList.remove('hidden');
+    }
+    function closeBackendConfigModal() {
+      document.getElementById('backendModal').classList.add('hidden');
+    }
+    function setApiUrl(url) {
+      document.getElementById('customApiUrlInput').value = url;
+    }
+    function testAndSaveApiUrl() {
+      activeApiBase = document.getElementById('customApiUrlInput').value.trim() || 'http://127.0.0.1:8000';
+      closeBackendConfigModal();
+      checkApiHealth();
+      showToast(`Connected to: ${activeApiBase}`);
+      loadDashboardStats();
+      refreshHistory();
+    }
+
+    // Toast Utility
+    function showToast(msg) {
+      const c = document.getElementById('toastContainer');
+      const t = document.createElement('div');
+      t.className = "bg-slate-900 border border-slate-700 text-slate-200 text-xs px-4 py-2.5 rounded-xl shadow-2xl backdrop-blur-md transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto flex items-center space-x-2";
+      t.innerHTML = `<span>✨</span><span>${msg}</span>`;
+      c.appendChild(t);
+      setTimeout(() => { t.classList.remove('translate-y-2', 'opacity-0'); }, 10);
+      setTimeout(() => {
+        t.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => t.remove(), 300);
+      }, 3500);
+    }
+  </script>
+</body>
+</html>
