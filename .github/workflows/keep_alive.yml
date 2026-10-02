@@ -1,0 +1,17 @@
+name: Keep SafeBite Backend Alive 24x7
+
+on:
+  schedule:
+    # Runs every 10 minutes, 24 hours a day, 365 days a year completely FREE on public repos
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping-render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping SafeBite Backend
+        run: |
+          echo "Pinging SafeBite Backend on Render..."
+          curl -s -f -m 30 https://safebite-g3fc.onrender.com/health || true
+          echo "Keep-alive ping completed successfully!"
