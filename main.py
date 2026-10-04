@@ -551,8 +551,54 @@ async def analyze_image(
 @app.get("/analyze/barcode/{barcode}", response_model=BarcodeResponse, tags=["Analysis"])
 @app.get("/barcode/{barcode}", response_model=BarcodeResponse, include_in_schema=False)
 def analyze_barcode(barcode: str):
-    """Fetches nutrition facts for a barcode using OpenFoodFacts API with local fallback."""
+    """Fetches nutrition facts for a barcode using OpenFoodFacts API with local catalog fallback."""
     clean_barcode = barcode.strip()
+
+    # 1. Check Indian Barcode Catalog
+    BACKEND_BARCODE_CATALOG = {
+        "8906002040006": ("Amul Taaza Homogenised Toned Milk", 58.0, 3.1, 4.7, 3.0, 4.7, 0.0, 50.0),
+        "8901058079803": ("Fortune Everyday Basmati Rice", 350.0, 8.5, 78.0, 0.5, 0.0, 1.5, 5.0),
+        "8901058852444": ("Maggi 2-Minute Masala Noodles", 427.0, 8.0, 63.5, 15.7, 2.2, 3.6, 1020.0),
+        "8901719101038": ("Parle-G Original Gluco Biscuits", 454.0, 6.5, 78.2, 13.0, 26.5, 1.2, 280.0),
+        "8901491101831": ("Lay's India's Magic Masala Chips", 544.0, 7.0, 52.0, 34.0, 3.0, 4.0, 780.0),
+        "8901491101824": ("Lay's Classic Salted Potato Chips", 540.0, 6.8, 53.0, 33.6, 1.0, 3.8, 550.0),
+        "8901063012826": ("Britannia Good Day Butter Cookies", 495.0, 6.0, 68.0, 22.0, 22.0, 1.0, 260.0),
+        "8901063013236": ("Britannia Bourbon Chocolate Cream Biscuits", 488.0, 5.5, 72.0, 20.0, 38.0, 1.5, 220.0),
+        "8901030018596": ("Kissan Fresh Tomato Ketchup", 142.0, 1.4, 34.0, 0.1, 28.0, 0.8, 850.0),
+        "8901499008200": ("Kurkure Masala Munch", 561.0, 6.1, 55.4, 35.0, 2.5, 2.0, 890.0),
+        "8901233024844": ("Tata Salt Vacuum Evaporated Iodized", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 38700.0),
+        "8901030383793": ("Horlicks Classic Malt", 377.0, 11.0, 79.0, 2.0, 32.0, 4.0, 400.0),
+        "8901058863648": ("Nestle KitKat 4-Finger Chocolate", 518.0, 7.2, 64.5, 26.0, 45.0, 2.1, 130.0),
+        "7622201446757": ("Cadbury Dairy Milk Chocolate", 534.0, 7.8, 60.5, 29.5, 57.0, 2.0, 150.0),
+        "8901233012018": ("Cadbury Dairy Milk Chocolate", 534.0, 7.8, 60.5, 29.5, 57.0, 2.0, 150.0),
+        "7622201764653": ("Oreo Original Vanilla Sandwich Biscuits", 480.0, 5.0, 70.0, 20.0, 38.0, 2.5, 410.0),
+        "8901764012235": ("Coca-Cola Original Taste", 44.0, 0.0, 10.6, 0.0, 10.6, 0.0, 10.0),
+        "8901764022234": ("Thums Up Strong Cola", 40.0, 0.0, 10.0, 0.0, 10.0, 0.0, 12.0),
+        "8904063200114": ("Haldiram's Nagpur Bhujia Sev", 588.0, 14.0, 41.0, 41.0, 2.0, 4.5, 780.0),
+        "8904063200121": ("Haldiram's Aloo Bhujia", 582.0, 8.5, 43.0, 42.0, 2.0, 3.8, 760.0),
+        "8901499010340": ("Kellogg's Corn Flakes Original", 378.0, 6.8, 84.0, 0.8, 8.0, 2.7, 460.0),
+        "8901491001889": ("Quaker Rolled White Oats", 389.0, 16.9, 66.3, 6.9, 0.0, 10.6, 2.0)
+    }
+
+    if clean_barcode in BACKEND_BARCODE_CATALOG:
+        name, cal, prot, carbs, fat, sugar, fiber, sod = BACKEND_BARCODE_CATALOG[clean_barcode]
+        score, classification, reasons, _, _ = calculate_health_score(
+            calories=cal, protein=prot, carbs=carbs, fat=fat, sugar=sugar, fiber=fiber, sodium=sod
+        )
+        alts = get_healthier_alternatives(name, classification)
+        rec = f"Product contains {int(cal)} kcal, {prot}g protein, {carbs}g carbs, {fat}g fat per 100g. Classified as {classification}."
+        return BarcodeResponse(
+            status="success",
+            product_name=name,
+            nutrition=NutritionData(calories=cal, protein=prot, carbs=carbs, fat=fat, sugar=sugar, fiber=fiber, sodium=sod),
+            health_score=score,
+            classification=classification,
+            category=classification,
+            recommendation=rec,
+            healthier_alternatives=alts
+        )
+
+    # 2. Query OpenFoodFacts API
     try:
         import requests
         url = f"https://world.openfoodfacts.org/api/v0/product/{clean_barcode}.json"
@@ -568,18 +614,19 @@ def analyze_barcode(barcode: str):
                 prot = float(nutr.get("proteins_100g") or nutr.get("proteins") or 3.0)
                 carbs = float(nutr.get("carbohydrates_100g") or nutr.get("carbohydrates") or 20.0)
                 sugar = float(nutr.get("sugars_100g") or 0.0)
+                fiber = float(nutr.get("fiber_100g") or 0.0)
                 sod = float(nutr.get("sodium_100g") or 0.0) * 1000.0 # g to mg
 
                 score, classification, reasons, _, _ = calculate_health_score(
-                    calories=cal, protein=prot, carbs=carbs, fat=fat, sugar=sugar, sodium=sod
+                    calories=cal, protein=prot, carbs=carbs, fat=fat, sugar=sugar, fiber=fiber, sodium=sod
                 )
                 alts = get_healthier_alternatives(name, classification)
-                rec = f"Product contains {int(cal)} kcal, {prot}g protein, {carbs}g carbs, {fat}g fat. Classified as {classification}."
+                rec = f"Product contains {int(cal)} kcal, {prot}g protein, {carbs}g carbs, {fat}g fat per 100g. Classified as {classification}."
 
                 return BarcodeResponse(
                     status="success",
                     product_name=name,
-                    nutrition=NutritionData(calories=cal, protein=prot, carbs=carbs, fat=fat, sugar=sugar, sodium=sod),
+                    nutrition=NutritionData(calories=cal, protein=prot, carbs=carbs, fat=fat, sugar=sugar, fiber=fiber, sodium=sod),
                     health_score=score,
                     classification=classification,
                     category=classification,
@@ -589,18 +636,10 @@ def analyze_barcode(barcode: str):
     except Exception as e:
         logger.warning(f"OpenFoodFacts lookup failed: {e}")
 
-    # Fallback response for demo barcode
-    score, classification, reasons, _, _ = calculate_health_score(calories=160, protein=2, carbs=15, fat=10)
-    alts = get_healthier_alternatives("Packaged Snack", classification)
-    return BarcodeResponse(
-        status="success",
-        product_name=f"Packaged Food ({clean_barcode})",
-        nutrition=NutritionData(calories=160, protein=2, carbs=15, fat=10),
-        health_score=score,
-        classification=classification,
-        category=classification,
-        recommendation=f"Barcode {clean_barcode} recognized. Moderate daily consumption recommended.",
-        healthier_alternatives=alts
+    # No fake data! Raise 404 to prompt user to scan label
+    raise HTTPException(
+        status_code=404,
+        detail=f"Barcode {clean_barcode} not found in database. Please scan the Nutrition Label on the packet."
     )
 
 

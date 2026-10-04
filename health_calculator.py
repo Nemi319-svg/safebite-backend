@@ -115,9 +115,9 @@ def calculate_health_score(
     final_score = max(0.0, min(100.0, score))
 
     # Classification
-    if final_score >= 80:
+    if final_score >= 70:
         classification = "Healthy"
-    elif final_score >= 50:
+    elif final_score >= 40:
         classification = "Moderate"
     else:
         classification = "Unhealthy"
