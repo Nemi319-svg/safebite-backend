@@ -1,8 +1,23 @@
 from typing import List, Dict, Any
 
 INDIAN_FOOD_DATASET: List[Dict[str, Any]] = [
+    # =========================================================================
+    # NORTH INDIA (उत्तर भारत)
+    # =========================================================================
     {
-        "name": "Dal Tadka (Yellow Lentils)",
+        "name": "Dal Makhani (Black Lentil Curry)",
+        "calories": 280.0,
+        "protein": 8.5,
+        "carbs": 30.0,
+        "fat": 14.0,
+        "fiber": 5.5,
+        "sugar": 2.0,
+        "sodium": 390.0,
+        "category": "North Indian",
+        "region": "North India"
+    },
+    {
+        "name": "Dal Tadka (Yellow Lentil Curry)",
         "calories": 160.0,
         "protein": 8.5,
         "carbs": 24.0,
@@ -10,76 +25,23 @@ INDIAN_FOOD_DATASET: List[Dict[str, Any]] = [
         "fiber": 6.0,
         "sugar": 1.5,
         "sodium": 320.0,
-        "category": "Lentils & Curries"
+        "category": "North Indian",
+        "region": "North India"
     },
     {
-        "name": "Roti (Whole Wheat Chapati)",
-        "calories": 104.0,
-        "protein": 3.4,
-        "carbs": 22.0,
-        "fat": 0.5,
-        "fiber": 3.2,
-        "sugar": 0.2,
-        "sodium": 120.0,
-        "category": "Breads"
-    },
-    {
-        "name": "Poha (Flattened Rice with Veggies)",
-        "calories": 180.0,
-        "protein": 4.0,
-        "carbs": 33.0,
-        "fat": 3.8,
+        "name": "Paneer Butter Masala (Cottage Cheese Curry)",
+        "calories": 360.0,
+        "protein": 14.0,
+        "carbs": 18.0,
+        "fat": 26.0,
         "fiber": 2.5,
-        "sugar": 1.2,
-        "sodium": 280.0,
-        "category": "Breakfast"
+        "sugar": 4.0,
+        "sodium": 440.0,
+        "category": "North Indian",
+        "region": "North India"
     },
     {
-        "name": "Idli (Steamed Rice & Urad Cake - 2 pcs)",
-        "calories": 130.0,
-        "protein": 4.5,
-        "carbs": 26.0,
-        "fat": 0.8,
-        "fiber": 2.0,
-        "sugar": 0.5,
-        "sodium": 190.0,
-        "category": "Breakfast"
-    },
-    {
-        "name": "Plain Dosa",
-        "calories": 168.0,
-        "protein": 3.9,
-        "carbs": 29.0,
-        "fat": 3.7,
-        "fiber": 1.8,
-        "sugar": 0.6,
-        "sodium": 240.0,
-        "category": "Breakfast"
-    },
-    {
-        "name": "Masala Dosa with Potato Filling",
-        "calories": 280.0,
-        "protein": 6.0,
-        "carbs": 42.0,
-        "fat": 10.0,
-        "fiber": 3.5,
-        "sugar": 1.8,
-        "sodium": 420.0,
-        "category": "Breakfast"
-    },
-    {
-        "name": "Paneer Tikka (Grilled Cottage Cheese)",
-        "calories": 240.0,
-        "protein": 16.0,
-        "carbs": 7.0,
-        "fat": 17.0,
-        "fiber": 2.0,
-        "sugar": 2.0,
-        "sodium": 350.0,
-        "category": "Dairy & Appetizers"
-    },
-    {
-        "name": "Palak Paneer",
+        "name": "Palak Paneer (Spinach Cottage Cheese)",
         "calories": 220.0,
         "protein": 11.5,
         "carbs": 9.0,
@@ -87,29 +49,68 @@ INDIAN_FOOD_DATASET: List[Dict[str, Any]] = [
         "fiber": 4.2,
         "sugar": 2.2,
         "sodium": 380.0,
-        "category": "Curries"
+        "category": "North Indian",
+        "region": "North India"
     },
     {
-        "name": "Steamed Basmati Rice (1 cup cooked)",
-        "calories": 205.0,
-        "protein": 4.2,
-        "carbs": 45.0,
-        "fat": 0.5,
-        "fiber": 0.8,
-        "sugar": 0.1,
-        "sodium": 5.0,
-        "category": "Grains & Rice"
+        "name": "Shahi Paneer (Cashew Nut Gravy)",
+        "calories": 340.0,
+        "protein": 13.0,
+        "carbs": 16.0,
+        "fat": 25.0,
+        "fiber": 2.0,
+        "sugar": 4.5,
+        "sodium": 410.0,
+        "category": "North Indian",
+        "region": "North India"
     },
     {
-        "name": "Brown Rice (1 cup cooked)",
-        "calories": 218.0,
-        "protein": 4.5,
-        "carbs": 45.8,
-        "fat": 1.6,
+        "name": "Kadai Paneer (Bell Pepper Cottage Cheese)",
+        "calories": 260.0,
+        "protein": 13.5,
+        "carbs": 12.0,
+        "fat": 18.0,
+        "fiber": 3.0,
+        "sugar": 2.5,
+        "sodium": 390.0,
+        "category": "North Indian",
+        "region": "North India"
+    },
+    {
+        "name": "Matar Paneer (Peas & Cottage Cheese)",
+        "calories": 240.0,
+        "protein": 11.0,
+        "carbs": 16.0,
+        "fat": 15.0,
         "fiber": 3.5,
-        "sugar": 0.3,
-        "sodium": 2.0,
-        "category": "Grains & Rice"
+        "sugar": 3.0,
+        "sodium": 370.0,
+        "category": "North Indian",
+        "region": "North India"
+    },
+    {
+        "name": "Chole Bhature (Spiced Chickpeas with Fried Bread)",
+        "calories": 480.0,
+        "protein": 12.5,
+        "carbs": 62.0,
+        "fat": 21.0,
+        "fiber": 7.0,
+        "sugar": 3.2,
+        "sodium": 590.0,
+        "category": "North Indian",
+        "region": "North India"
+    },
+    {
+        "name": "Chole Masala (Chickpea Curry)",
+        "calories": 240.0,
+        "protein": 10.0,
+        "carbs": 36.0,
+        "fat": 7.0,
+        "fiber": 9.0,
+        "sugar": 3.0,
+        "sodium": 420.0,
+        "category": "North Indian",
+        "region": "North India"
     },
     {
         "name": "Rajma Masala (Red Kidney Beans Curry)",
@@ -120,29 +121,300 @@ INDIAN_FOOD_DATASET: List[Dict[str, Any]] = [
         "fiber": 8.0,
         "sugar": 2.5,
         "sodium": 390.0,
-        "category": "Curries"
+        "category": "North Indian",
+        "region": "North India"
     },
     {
-        "name": "Chole Masala (Chickpeas Curry)",
-        "calories": 240.0,
-        "protein": 10.0,
-        "carbs": 36.0,
-        "fat": 7.0,
-        "fiber": 9.0,
-        "sugar": 3.0,
-        "sodium": 420.0,
-        "category": "Curries"
+        "name": "Sarson Ka Saag & Makki Roti (Mustard Greens & Corn Flatbread)",
+        "calories": 310.0,
+        "protein": 7.5,
+        "carbs": 38.0,
+        "fat": 14.5,
+        "fiber": 6.5,
+        "sugar": 2.0,
+        "sodium": 340.0,
+        "category": "North Indian",
+        "region": "North India"
     },
     {
-        "name": "Vegetable Biryani",
+        "name": "Aloo Paratha (Stuffed Spiced Potato Flatbread - 1 pc)",
         "calories": 290.0,
-        "protein": 6.5,
-        "carbs": 48.0,
-        "fat": 9.0,
-        "fiber": 4.0,
-        "sugar": 2.8,
+        "protein": 5.5,
+        "carbs": 44.0,
+        "fat": 10.5,
+        "fiber": 4.2,
+        "sugar": 1.5,
+        "sodium": 360.0,
+        "category": "North Indian",
+        "region": "North India"
+    },
+    {
+        "name": "Paneer Paratha (Stuffed Cottage Cheese Flatbread - 1 pc)",
+        "calories": 330.0,
+        "protein": 12.0,
+        "carbs": 36.0,
+        "fat": 15.0,
+        "fiber": 3.8,
+        "sugar": 1.2,
+        "sodium": 380.0,
+        "category": "North Indian",
+        "region": "North India"
+    },
+    {
+        "name": "Gobi Paratha (Stuffed Cauliflower Flatbread - 1 pc)",
+        "calories": 250.0,
+        "protein": 5.0,
+        "carbs": 40.0,
+        "fat": 8.0,
+        "fiber": 4.5,
+        "sugar": 1.8,
+        "sodium": 320.0,
+        "category": "North Indian",
+        "region": "North India"
+    },
+    {
+        "name": "Baingan Bharta (Roasted Spiced Eggplant Mash)",
+        "calories": 140.0,
+        "protein": 3.0,
+        "carbs": 16.0,
+        "fat": 7.5,
+        "fiber": 5.0,
+        "sugar": 4.0,
+        "sodium": 290.0,
+        "category": "North Indian",
+        "region": "North India"
+    },
+    {
+        "name": "Dum Aloo Kashmiri (Spiced Baby Potato Curry)",
+        "calories": 230.0,
+        "protein": 4.0,
+        "carbs": 32.0,
+        "fat": 10.0,
+        "fiber": 3.8,
+        "sugar": 2.5,
+        "sodium": 380.0,
+        "category": "North Indian",
+        "region": "North India"
+    },
+    {
+        "name": "Kadhi Pakora (Yogurt & Gram Flour Curry with Fritters)",
+        "calories": 210.0,
+        "protein": 7.0,
+        "carbs": 24.0,
+        "fat": 9.5,
+        "fiber": 3.2,
+        "sugar": 3.5,
+        "sodium": 410.0,
+        "category": "North Indian",
+        "region": "North India"
+    },
+    {
+        "name": "Malai Kofta (Cottage Cheese & Potato Dumplings in Cream Gravy)",
+        "calories": 390.0,
+        "protein": 9.0,
+        "carbs": 28.0,
+        "fat": 28.0,
+        "fiber": 2.5,
+        "sugar": 5.0,
         "sodium": 460.0,
-        "category": "Grains & Rice"
+        "category": "North Indian",
+        "region": "North India"
+    },
+    {
+        "name": "Bhindi Masala (Spiced Okra Stir Fry)",
+        "calories": 130.0,
+        "protein": 3.5,
+        "carbs": 14.0,
+        "fat": 7.0,
+        "fiber": 4.5,
+        "sugar": 3.0,
+        "sodium": 280.0,
+        "category": "North Indian",
+        "region": "North India"
+    },
+    {
+        "name": "Jeera Aloo (Cumin Spiced Potatoes)",
+        "calories": 160.0,
+        "protein": 2.8,
+        "carbs": 26.0,
+        "fat": 5.5,
+        "fiber": 3.0,
+        "sugar": 1.2,
+        "sodium": 310.0,
+        "category": "North Indian",
+        "region": "North India"
+    },
+    {
+        "name": "Butter Chicken / Murgh Makhani",
+        "calories": 380.0,
+        "protein": 26.0,
+        "carbs": 12.0,
+        "fat": 25.0,
+        "fiber": 1.8,
+        "sugar": 4.0,
+        "sodium": 480.0,
+        "category": "North Indian",
+        "region": "North India"
+    },
+    {
+        "name": "Tandoori Chicken (Spiced Roasted Chicken Breast)",
+        "calories": 240.0,
+        "protein": 32.0,
+        "carbs": 4.0,
+        "fat": 10.0,
+        "fiber": 1.0,
+        "sugar": 1.0,
+        "sodium": 420.0,
+        "category": "North Indian",
+        "region": "North India"
+    },
+    {
+        "name": "Rogan Josh (Kashmiri Mutton Curry)",
+        "calories": 340.0,
+        "protein": 24.0,
+        "carbs": 8.0,
+        "fat": 24.0,
+        "fiber": 2.0,
+        "sugar": 2.0,
+        "sodium": 450.0,
+        "category": "North Indian",
+        "region": "North India"
+    },
+    {
+        "name": "Amritsari Kulcha (Crispy Stuffed Potato & Onion Bread)",
+        "calories": 310.0,
+        "protein": 6.0,
+        "carbs": 48.0,
+        "fat": 11.0,
+        "fiber": 3.5,
+        "sugar": 1.8,
+        "sodium": 390.0,
+        "category": "North Indian",
+        "region": "North India"
+    },
+    {
+        "name": "Paneer Tikka (Grilled Cottage Cheese Skewers - 4 pcs)",
+        "calories": 240.0,
+        "protein": 16.0,
+        "carbs": 7.0,
+        "fat": 17.0,
+        "fiber": 2.0,
+        "sugar": 2.0,
+        "sodium": 350.0,
+        "category": "North Indian",
+        "region": "North India"
+    },
+
+    # =========================================================================
+    # SOUTH INDIA (दक्षिण भारत)
+    # =========================================================================
+    {
+        "name": "Plain Dosa (Crispy Fermented Crepe)",
+        "calories": 168.0,
+        "protein": 3.9,
+        "carbs": 29.0,
+        "fat": 3.7,
+        "fiber": 1.8,
+        "sugar": 0.6,
+        "sodium": 240.0,
+        "category": "South Indian",
+        "region": "South India"
+    },
+    {
+        "name": "Masala Dosa with Potato Filling",
+        "calories": 280.0,
+        "protein": 6.0,
+        "carbs": 42.0,
+        "fat": 10.0,
+        "fiber": 3.5,
+        "sugar": 1.8,
+        "sodium": 420.0,
+        "category": "South Indian",
+        "region": "South India"
+    },
+    {
+        "name": "Mysore Masala Dosa (Spicy Red Chutney Dosa)",
+        "calories": 320.0,
+        "protein": 6.5,
+        "carbs": 44.0,
+        "fat": 13.0,
+        "fiber": 3.8,
+        "sugar": 2.0,
+        "sodium": 450.0,
+        "category": "South Indian",
+        "region": "South India"
+    },
+    {
+        "name": "Rava Dosa (Semolina Crispy Crepe)",
+        "calories": 210.0,
+        "protein": 4.5,
+        "carbs": 33.0,
+        "fat": 7.0,
+        "fiber": 2.0,
+        "sugar": 0.8,
+        "sodium": 310.0,
+        "category": "South Indian",
+        "region": "South India"
+    },
+    {
+        "name": "Idli with Sambar (Steamed Rice Cakes - 2 pcs)",
+        "calories": 160.0,
+        "protein": 6.0,
+        "carbs": 30.0,
+        "fat": 1.5,
+        "fiber": 3.0,
+        "sugar": 1.2,
+        "sodium": 310.0,
+        "category": "South Indian",
+        "region": "South India"
+    },
+    {
+        "name": "Medu Vada (Savory Urad Dal Fritter - 2 pcs)",
+        "calories": 240.0,
+        "protein": 7.5,
+        "carbs": 25.0,
+        "fat": 12.5,
+        "fiber": 3.2,
+        "sugar": 0.5,
+        "sodium": 330.0,
+        "category": "South Indian",
+        "region": "South India"
+    },
+    {
+        "name": "Sambar (Lentil & Mixed Vegetable Stew - 1 bowl)",
+        "calories": 115.0,
+        "protein": 5.0,
+        "carbs": 18.0,
+        "fat": 2.5,
+        "fiber": 4.2,
+        "sugar": 2.5,
+        "sodium": 390.0,
+        "category": "South Indian",
+        "region": "South India"
+    },
+    {
+        "name": "Coconut Chutney (Fresh Ground Coconut Dip - 2 tbsp)",
+        "calories": 95.0,
+        "protein": 1.2,
+        "carbs": 3.5,
+        "fat": 8.5,
+        "fiber": 1.8,
+        "sugar": 0.8,
+        "sodium": 160.0,
+        "category": "South Indian",
+        "region": "South India"
+    },
+    {
+        "name": "Ven Pongal (Ghee Moong Dal & Rice Porridge)",
+        "calories": 260.0,
+        "protein": 6.5,
+        "carbs": 38.0,
+        "fat": 9.5,
+        "fiber": 2.5,
+        "sugar": 0.5,
+        "sodium": 280.0,
+        "category": "South Indian",
+        "region": "South India"
     },
     {
         "name": "Upma (Semolina Savory Porridge)",
@@ -153,21 +425,171 @@ INDIAN_FOOD_DATASET: List[Dict[str, Any]] = [
         "fiber": 2.8,
         "sugar": 1.0,
         "sodium": 310.0,
-        "category": "Breakfast"
+        "category": "South Indian",
+        "region": "South India"
     },
     {
-        "name": "Moong Dal Khichdi",
-        "calories": 175.0,
-        "protein": 7.0,
+        "name": "Onion Tomato Uttapam (Thick Savory Rice Pancake)",
+        "calories": 220.0,
+        "protein": 5.2,
+        "carbs": 36.0,
+        "fat": 6.0,
+        "fiber": 3.0,
+        "sugar": 2.0,
+        "sodium": 340.0,
+        "category": "South Indian",
+        "region": "South India"
+    },
+    {
+        "name": "Curd Rice / Thayir Sadam (Yogurt Tempered Rice)",
+        "calories": 190.0,
+        "protein": 5.5,
         "carbs": 30.0,
-        "fat": 3.0,
-        "fiber": 4.0,
-        "sugar": 1.0,
+        "fat": 5.5,
+        "fiber": 1.2,
+        "sugar": 2.8,
         "sodium": 260.0,
-        "category": "Main Course"
+        "category": "South Indian",
+        "region": "South India"
     },
     {
-        "name": "Dhokla (Steamed Gram Flour Cakes - 2 pcs)",
+        "name": "Lemon Rice / Chitranna (Tangy Turmeric Rice)",
+        "calories": 230.0,
+        "protein": 4.2,
+        "carbs": 38.0,
+        "fat": 7.0,
+        "fiber": 1.8,
+        "sugar": 0.8,
+        "sodium": 290.0,
+        "category": "South Indian",
+        "region": "South India"
+    },
+    {
+        "name": "Bisi Bele Bath (Karnataka Spiced Lentil & Rice)",
+        "calories": 280.0,
+        "protein": 8.0,
+        "carbs": 44.0,
+        "fat": 8.0,
+        "fiber": 4.5,
+        "sugar": 2.0,
+        "sodium": 380.0,
+        "category": "South Indian",
+        "region": "South India"
+    },
+    {
+        "name": "Tamarind Rice / Puliyodharai",
+        "calories": 260.0,
+        "protein": 4.5,
+        "carbs": 42.0,
+        "fat": 8.5,
+        "fiber": 2.5,
+        "sugar": 2.2,
+        "sodium": 340.0,
+        "category": "South Indian",
+        "region": "South India"
+    },
+    {
+        "name": "Tomato Rasam (Spiced Broth - 1 cup)",
+        "calories": 45.0,
+        "protein": 1.5,
+        "carbs": 8.0,
+        "fat": 1.0,
+        "fiber": 1.2,
+        "sugar": 2.0,
+        "sodium": 280.0,
+        "category": "South Indian",
+        "region": "South India"
+    },
+    {
+        "name": "Appam with Vegetable Coconut Stew",
+        "calories": 240.0,
+        "protein": 4.0,
+        "carbs": 36.0,
+        "fat": 9.0,
+        "fiber": 3.2,
+        "sugar": 2.5,
+        "sodium": 290.0,
+        "category": "South Indian",
+        "region": "South India"
+    },
+    {
+        "name": "Kerala Fish Curry (Kudampuli & Coconut Fish)",
+        "calories": 250.0,
+        "protein": 22.0,
+        "carbs": 6.0,
+        "fat": 15.0,
+        "fiber": 1.5,
+        "sugar": 1.2,
+        "sodium": 410.0,
+        "category": "South Indian",
+        "region": "South India"
+    },
+    {
+        "name": "Chettinad Chicken Curry (Spicy Pepper Gravy)",
+        "calories": 310.0,
+        "protein": 25.0,
+        "carbs": 7.0,
+        "fat": 20.0,
+        "fiber": 2.2,
+        "sugar": 1.5,
+        "sodium": 460.0,
+        "category": "South Indian",
+        "region": "South India"
+    },
+    {
+        "name": "Malabar Parotta (Flaky Layered Bread - 1 pc)",
+        "calories": 260.0,
+        "protein": 4.5,
+        "carbs": 36.0,
+        "fat": 11.0,
+        "fiber": 1.5,
+        "sugar": 0.8,
+        "sodium": 280.0,
+        "category": "South Indian",
+        "region": "South India"
+    },
+    {
+        "name": "Avial (Kerala Mixed Vegetables with Coconut & Curd)",
+        "calories": 170.0,
+        "protein": 3.8,
+        "carbs": 16.0,
+        "fat": 10.0,
+        "fiber": 4.5,
+        "sugar": 3.0,
+        "sodium": 270.0,
+        "category": "South Indian",
+        "region": "South India"
+    },
+    {
+        "name": "Hyderabadi Veg Dum Biryani",
+        "calories": 290.0,
+        "protein": 6.5,
+        "carbs": 48.0,
+        "fat": 9.0,
+        "fiber": 4.0,
+        "sugar": 2.8,
+        "sodium": 460.0,
+        "category": "South Indian",
+        "region": "South India"
+    },
+    {
+        "name": "Hyderabadi Chicken Dum Biryani",
+        "calories": 390.0,
+        "protein": 24.0,
+        "carbs": 46.0,
+        "fat": 13.0,
+        "fiber": 3.0,
+        "sugar": 2.0,
+        "sodium": 520.0,
+        "category": "South Indian",
+        "region": "South India"
+    },
+
+    # =========================================================================
+    # WEST INDIA (पश्चिम भारत - Maharashtra, Gujarat, Rajasthan, Goa)
+    # =========================================================================
+    {
+        "name": "Khaman Dhokla (Steamed Gram Flour Cakes - 2 pcs)",
         "calories": 150.0,
         "protein": 6.0,
         "carbs": 23.0,
@@ -175,10 +597,611 @@ INDIAN_FOOD_DATASET: List[Dict[str, Any]] = [
         "fiber": 2.5,
         "sugar": 3.0,
         "sodium": 340.0,
-        "category": "Snacks"
+        "category": "West Indian",
+        "region": "West India"
     },
     {
-        "name": "Samosa (1 piece fried)",
+        "name": "Khandvi (Spiced Gram Flour Rolls - 4 pcs)",
+        "calories": 160.0,
+        "protein": 5.5,
+        "carbs": 20.0,
+        "fat": 6.5,
+        "fiber": 2.2,
+        "sugar": 2.0,
+        "sodium": 310.0,
+        "category": "West Indian",
+        "region": "West India"
+    },
+    {
+        "name": "Thepla (Fenugreek Methi Flatbread - 2 pcs)",
+        "calories": 210.0,
+        "protein": 5.8,
+        "carbs": 32.0,
+        "fat": 7.0,
+        "fiber": 3.5,
+        "sugar": 1.0,
+        "sodium": 290.0,
+        "category": "West Indian",
+        "region": "West India"
+    },
+    {
+        "name": "Pav Bhaji (Spiced Vegetable Mash with 2 Butter Pav)",
+        "calories": 420.0,
+        "protein": 9.0,
+        "carbs": 58.0,
+        "fat": 18.0,
+        "fiber": 6.0,
+        "sugar": 4.5,
+        "sodium": 580.0,
+        "category": "West Indian",
+        "region": "West India"
+    },
+    {
+        "name": "Vada Pav (Mumbai Potato Fritter Burger - 1 pc)",
+        "calories": 290.0,
+        "protein": 6.0,
+        "carbs": 42.0,
+        "fat": 11.0,
+        "fiber": 3.0,
+        "sugar": 2.0,
+        "sodium": 440.0,
+        "category": "West Indian",
+        "region": "West India"
+    },
+    {
+        "name": "Misal Pav (Sprouted Moth Curry with Farsan & Pav)",
+        "calories": 380.0,
+        "protein": 12.0,
+        "carbs": 52.0,
+        "fat": 14.0,
+        "fiber": 7.5,
+        "sugar": 3.0,
+        "sodium": 520.0,
+        "category": "West Indian",
+        "region": "West India"
+    },
+    {
+        "name": "Poha (Flattened Rice with Veggies & Peanuts)",
+        "calories": 180.0,
+        "protein": 4.0,
+        "carbs": 33.0,
+        "fat": 3.8,
+        "fiber": 2.5,
+        "sugar": 1.2,
+        "sodium": 280.0,
+        "category": "West Indian",
+        "region": "West India"
+    },
+    {
+        "name": "Sabudana Khichdi (Tapioca Pearls with Roasted Peanuts)",
+        "calories": 270.0,
+        "protein": 4.0,
+        "carbs": 44.0,
+        "fat": 9.0,
+        "fiber": 1.5,
+        "sugar": 1.5,
+        "sodium": 240.0,
+        "category": "West Indian",
+        "region": "West India"
+    },
+    {
+        "name": "Puran Poli (Sweet Chana Dal Stuffed Flatbread - 1 pc)",
+        "calories": 260.0,
+        "protein": 6.5,
+        "carbs": 46.0,
+        "fat": 6.0,
+        "fiber": 3.5,
+        "sugar": 16.0,
+        "sodium": 140.0,
+        "category": "West Indian",
+        "region": "West India"
+    },
+    {
+        "name": "Dal Baati Churma (Baked Wheat Balls with Lentils & Churma)",
+        "calories": 520.0,
+        "protein": 14.0,
+        "carbs": 68.0,
+        "fat": 22.0,
+        "fiber": 7.5,
+        "sugar": 12.0,
+        "sodium": 480.0,
+        "category": "West Indian",
+        "region": "West India"
+    },
+    {
+        "name": "Gatte Ki Sabzi (Gram Flour Dumplings in Curd Gravy)",
+        "calories": 240.0,
+        "protein": 8.0,
+        "carbs": 22.0,
+        "fat": 13.0,
+        "fiber": 3.5,
+        "sugar": 2.8,
+        "sodium": 390.0,
+        "category": "West Indian",
+        "region": "West India"
+    },
+    {
+        "name": "Ker Sangri (Rajasthani Desert Bean Stir Fry)",
+        "calories": 160.0,
+        "protein": 5.0,
+        "carbs": 18.0,
+        "fat": 8.0,
+        "fiber": 5.5,
+        "sugar": 2.0,
+        "sodium": 310.0,
+        "category": "West Indian",
+        "region": "West India"
+    },
+    {
+        "name": "Pitla Bhakri (Besan Curry with Jowar Millet Roti)",
+        "calories": 290.0,
+        "protein": 9.0,
+        "carbs": 45.0,
+        "fat": 8.0,
+        "fiber": 6.0,
+        "sugar": 1.5,
+        "sodium": 360.0,
+        "category": "West Indian",
+        "region": "West India"
+    },
+    {
+        "name": "Thalipeeth (Multi-grain Savory Spiced Pancake - 1 pc)",
+        "calories": 210.0,
+        "protein": 6.5,
+        "carbs": 32.0,
+        "fat": 7.0,
+        "fiber": 4.5,
+        "sugar": 1.0,
+        "sodium": 290.0,
+        "category": "West Indian",
+        "region": "West India"
+    },
+    {
+        "name": "Goan Fish Curry (Kokum & Coconut Fish)",
+        "calories": 260.0,
+        "protein": 21.0,
+        "carbs": 5.5,
+        "fat": 17.0,
+        "fiber": 1.8,
+        "sugar": 1.5,
+        "sodium": 420.0,
+        "category": "West Indian",
+        "region": "West India"
+    },
+    {
+        "name": "Sev Tamatar Ki Sabzi (Tangy Tomato Gravy with Sev)",
+        "calories": 220.0,
+        "protein": 5.0,
+        "carbs": 24.0,
+        "fat": 12.0,
+        "fiber": 3.0,
+        "sugar": 4.5,
+        "sodium": 430.0,
+        "category": "West Indian",
+        "region": "West India"
+    },
+    {
+        "name": "Ragda Pattice (White Peas Gravy with Potato Patties)",
+        "calories": 310.0,
+        "protein": 9.5,
+        "carbs": 48.0,
+        "fat": 9.0,
+        "fiber": 6.5,
+        "sugar": 3.2,
+        "sodium": 460.0,
+        "category": "West Indian",
+        "region": "West India"
+    },
+
+    # =========================================================================
+    # EAST & NORTH-EAST INDIA (पूर्व एवं उत्तर-पूर्व भारत)
+    # =========================================================================
+    {
+        "name": "Litti Chokha (Roasted Sattu Wheat Balls with Chokha - 2 pcs)",
+        "calories": 340.0,
+        "protein": 12.5,
+        "carbs": 54.0,
+        "fat": 8.5,
+        "fiber": 8.0,
+        "sugar": 2.2,
+        "sodium": 380.0,
+        "category": "East Indian",
+        "region": "East India"
+    },
+    {
+        "name": "Macher Jhol (Traditional Bengali Fish Curry)",
+        "calories": 220.0,
+        "protein": 22.0,
+        "carbs": 6.5,
+        "fat": 12.0,
+        "fiber": 1.5,
+        "sugar": 1.0,
+        "sodium": 390.0,
+        "category": "East Indian",
+        "region": "East India"
+    },
+    {
+        "name": "Kosha Mangsho (Bengali Slow Cooked Spiced Mutton)",
+        "calories": 380.0,
+        "protein": 26.0,
+        "carbs": 9.0,
+        "fat": 27.0,
+        "fiber": 2.0,
+        "sugar": 2.5,
+        "sodium": 460.0,
+        "category": "East Indian",
+        "region": "East India"
+    },
+    {
+        "name": "Luchi with Aloo Dum (Deep Fried Flatbread with Spiced Potatoes)",
+        "calories": 360.0,
+        "protein": 5.5,
+        "carbs": 48.0,
+        "fat": 17.0,
+        "fiber": 3.5,
+        "sugar": 2.0,
+        "sodium": 410.0,
+        "category": "East Indian",
+        "region": "East India"
+    },
+    {
+        "name": "Shukto (Bengali Bitter-Sweet Vegetable Medley)",
+        "calories": 140.0,
+        "protein": 3.5,
+        "carbs": 18.0,
+        "fat": 6.0,
+        "fiber": 4.0,
+        "sugar": 3.0,
+        "sodium": 260.0,
+        "category": "East Indian",
+        "region": "East India"
+    },
+    {
+        "name": "Cholar Dal (Bengali Chana Dal with Coconut & Spices)",
+        "calories": 230.0,
+        "protein": 9.5,
+        "carbs": 32.0,
+        "fat": 7.5,
+        "fiber": 6.5,
+        "sugar": 3.5,
+        "sodium": 310.0,
+        "category": "East Indian",
+        "region": "East India"
+    },
+    {
+        "name": "Dalma (Odisha Lentil Stew with Raw Papaya & Pumpkin)",
+        "calories": 170.0,
+        "protein": 7.5,
+        "carbs": 26.0,
+        "fat": 4.5,
+        "fiber": 5.5,
+        "sugar": 2.5,
+        "sodium": 290.0,
+        "category": "East Indian",
+        "region": "East India"
+    },
+    {
+        "name": "Pakhala Bhata (Fermented Water Rice with Curd & Tempering)",
+        "calories": 180.0,
+        "protein": 4.2,
+        "carbs": 34.0,
+        "fat": 3.0,
+        "fiber": 1.5,
+        "sugar": 1.5,
+        "sodium": 220.0,
+        "category": "East Indian",
+        "region": "East India"
+    },
+    {
+        "name": "Masor Tenga (Assamese Tangy Fish Curry with Tomato & Lemon)",
+        "calories": 190.0,
+        "protein": 21.0,
+        "carbs": 5.0,
+        "fat": 9.5,
+        "fiber": 1.2,
+        "sugar": 1.8,
+        "sodium": 340.0,
+        "category": "East Indian",
+        "region": "East India"
+    },
+    {
+        "name": "Steamed Veg Momos (6 pcs with Chili Dip)",
+        "calories": 210.0,
+        "protein": 5.5,
+        "carbs": 38.0,
+        "fat": 4.0,
+        "fiber": 3.0,
+        "sugar": 1.5,
+        "sodium": 360.0,
+        "category": "East Indian",
+        "region": "East India"
+    },
+    {
+        "name": "Steamed Chicken Momos (6 pcs with Chili Dip)",
+        "calories": 260.0,
+        "protein": 16.0,
+        "carbs": 34.0,
+        "fat": 6.5,
+        "fiber": 2.0,
+        "sugar": 1.0,
+        "sodium": 390.0,
+        "category": "East Indian",
+        "region": "East India"
+    },
+    {
+        "name": "Thukpa (Tibetan / Himalayan Noodle Soup with Veggies)",
+        "calories": 240.0,
+        "protein": 7.0,
+        "carbs": 42.0,
+        "fat": 5.0,
+        "fiber": 3.5,
+        "sugar": 2.0,
+        "sodium": 440.0,
+        "category": "East Indian",
+        "region": "East India"
+    },
+
+    # =========================================================================
+    # INDIAN BREADS, RICE & STAPLES (रोटी, चावल एवं दाल)
+    # =========================================================================
+    {
+        "name": "Roti / Phulka (Whole Wheat Chapati - 1 pc)",
+        "calories": 104.0,
+        "protein": 3.4,
+        "carbs": 22.0,
+        "fat": 0.5,
+        "fiber": 3.2,
+        "sugar": 0.2,
+        "sodium": 120.0,
+        "category": "Breads & Rice",
+        "region": "All-India"
+    },
+    {
+        "name": "Tandoori Roti (Clay Oven Whole Wheat Flatbread - 1 pc)",
+        "calories": 115.0,
+        "protein": 3.8,
+        "carbs": 24.0,
+        "fat": 0.6,
+        "fiber": 3.4,
+        "sugar": 0.2,
+        "sodium": 130.0,
+        "category": "Breads & Rice",
+        "region": "All-India"
+    },
+    {
+        "name": "Plain Naan (Leavened Oven Bread - 1 pc)",
+        "calories": 260.0,
+        "protein": 7.0,
+        "carbs": 45.0,
+        "fat": 5.0,
+        "fiber": 2.0,
+        "sugar": 2.5,
+        "sodium": 340.0,
+        "category": "Breads & Rice",
+        "region": "All-India"
+    },
+    {
+        "name": "Butter Naan (Layered Leavened Bread with Butter - 1 pc)",
+        "calories": 310.0,
+        "protein": 7.2,
+        "carbs": 45.0,
+        "fat": 11.5,
+        "fiber": 2.0,
+        "sugar": 2.5,
+        "sodium": 360.0,
+        "category": "Breads & Rice",
+        "region": "All-India"
+    },
+    {
+        "name": "Garlic Naan (Leavened Bread with Roasted Garlic - 1 pc)",
+        "calories": 280.0,
+        "protein": 7.5,
+        "carbs": 46.0,
+        "fat": 7.0,
+        "fiber": 2.2,
+        "sugar": 2.6,
+        "sodium": 370.0,
+        "category": "Breads & Rice",
+        "region": "All-India"
+    },
+    {
+        "name": "Missi Roti (Spiced Gram Flour & Wheat Flatbread - 1 pc)",
+        "calories": 145.0,
+        "protein": 5.2,
+        "carbs": 24.0,
+        "fat": 3.5,
+        "fiber": 3.8,
+        "sugar": 0.5,
+        "sodium": 210.0,
+        "category": "Breads & Rice",
+        "region": "All-India"
+    },
+    {
+        "name": "Steamed Basmati Rice (1 cup cooked)",
+        "calories": 205.0,
+        "protein": 4.2,
+        "carbs": 45.0,
+        "fat": 0.5,
+        "fiber": 0.8,
+        "sugar": 0.1,
+        "sodium": 5.0,
+        "category": "Breads & Rice",
+        "region": "All-India"
+    },
+    {
+        "name": "Jeera Rice (Cumin Scented Basmati Rice - 1 cup)",
+        "calories": 235.0,
+        "protein": 4.4,
+        "carbs": 45.0,
+        "fat": 4.5,
+        "fiber": 1.2,
+        "sugar": 0.2,
+        "sodium": 180.0,
+        "category": "Breads & Rice",
+        "region": "All-India"
+    },
+    {
+        "name": "Brown Rice (1 cup cooked)",
+        "calories": 218.0,
+        "protein": 4.5,
+        "carbs": 45.8,
+        "fat": 1.6,
+        "fiber": 3.5,
+        "sugar": 0.3,
+        "sodium": 2.0,
+        "category": "Breads & Rice",
+        "region": "All-India"
+    },
+    {
+        "name": "Moong Dal Khichdi (Comforting Lentil & Rice Porridge)",
+        "calories": 175.0,
+        "protein": 7.0,
+        "carbs": 30.0,
+        "fat": 3.0,
+        "fiber": 4.0,
+        "sugar": 1.0,
+        "sodium": 260.0,
+        "category": "Breads & Rice",
+        "region": "All-India"
+    },
+    {
+        "name": "Boondi Raita (Spiced Yogurt with Gram Crisps - 1 bowl)",
+        "calories": 140.0,
+        "protein": 5.0,
+        "carbs": 12.0,
+        "fat": 8.0,
+        "fiber": 0.8,
+        "sugar": 3.5,
+        "sodium": 260.0,
+        "category": "Breads & Rice",
+        "region": "All-India"
+    },
+    {
+        "name": "Cucumber Raita (Cooling Spiced Yogurt - 1 bowl)",
+        "calories": 85.0,
+        "protein": 4.5,
+        "carbs": 7.0,
+        "fat": 4.0,
+        "fiber": 1.0,
+        "sugar": 3.8,
+        "sodium": 190.0,
+        "category": "Breads & Rice",
+        "region": "All-India"
+    },
+    {
+        "name": "Plain Fresh Curd / Dahi (1 cup)",
+        "calories": 100.0,
+        "protein": 6.0,
+        "carbs": 7.5,
+        "fat": 4.5,
+        "fiber": 0.0,
+        "sugar": 6.0,
+        "sodium": 75.0,
+        "category": "Breads & Rice",
+        "region": "All-India"
+    },
+
+    # =========================================================================
+    # HEALTHY DESI SNACKS & STREET FOOD (नाश्ता एवं चाट)
+    # =========================================================================
+    {
+        "name": "Roasted Phool Makhana (Roasted Fox Nuts - 1 bowl)",
+        "calories": 105.0,
+        "protein": 3.0,
+        "carbs": 20.0,
+        "fat": 1.5,
+        "fiber": 2.5,
+        "sugar": 0.2,
+        "sodium": 140.0,
+        "category": "Snacks & Chaat",
+        "region": "All-India"
+    },
+    {
+        "name": "Roasted Chana / Bhuna Chana (Roasted Bengal Gram - 50g)",
+        "calories": 185.0,
+        "protein": 11.0,
+        "carbs": 29.0,
+        "fat": 3.0,
+        "fiber": 7.5,
+        "sugar": 1.0,
+        "sodium": 110.0,
+        "category": "Snacks & Chaat",
+        "region": "All-India"
+    },
+    {
+        "name": "Sprouted Moong Salad (Sprouted Beans with Lemon - 1 bowl)",
+        "calories": 120.0,
+        "protein": 8.0,
+        "carbs": 19.0,
+        "fat": 1.2,
+        "fiber": 6.0,
+        "sugar": 2.5,
+        "sodium": 95.0,
+        "category": "Snacks & Chaat",
+        "region": "All-India"
+    },
+    {
+        "name": "Moong Dal Chilla (High Protein Lentil Crepe - 1 pc)",
+        "calories": 135.0,
+        "protein": 7.5,
+        "carbs": 18.0,
+        "fat": 4.0,
+        "fiber": 4.0,
+        "sugar": 1.0,
+        "sodium": 220.0,
+        "category": "Snacks & Chaat",
+        "region": "All-India"
+    },
+    {
+        "name": "Besan Chilla (Savory Gram Flour Veggie Pancake - 1 pc)",
+        "calories": 145.0,
+        "protein": 6.5,
+        "carbs": 20.0,
+        "fat": 4.5,
+        "fiber": 3.5,
+        "sugar": 1.2,
+        "sodium": 240.0,
+        "category": "Snacks & Chaat",
+        "region": "All-India"
+    },
+    {
+        "name": "Bhel Puri (Puffed Rice with Tangy Chutneys - 1 plate)",
+        "calories": 210.0,
+        "protein": 4.0,
+        "carbs": 38.0,
+        "fat": 5.0,
+        "fiber": 3.0,
+        "sugar": 6.5,
+        "sodium": 390.0,
+        "category": "Snacks & Chaat",
+        "region": "All-India"
+    },
+    {
+        "name": "Sev Puri (Flat Puris with Potatoes, Chutneys & Sev - 6 pcs)",
+        "calories": 280.0,
+        "protein": 5.0,
+        "carbs": 40.0,
+        "fat": 11.5,
+        "fiber": 3.2,
+        "sugar": 7.0,
+        "sodium": 420.0,
+        "category": "Snacks & Chaat",
+        "region": "All-India"
+    },
+    {
+        "name": "Pani Puri / Golgappa (Crispy Puris with Mint Water - 6 pcs)",
+        "calories": 190.0,
+        "protein": 3.5,
+        "carbs": 32.0,
+        "fat": 5.5,
+        "fiber": 2.5,
+        "sugar": 3.0,
+        "sodium": 460.0,
+        "category": "Snacks & Chaat",
+        "region": "All-India"
+    },
+    {
+        "name": "Vegetable Samosa (Crispy Potato & Pea Pastry - 1 pc)",
         "calories": 262.0,
         "protein": 3.5,
         "carbs": 32.0,
@@ -186,10 +1209,63 @@ INDIAN_FOOD_DATASET: List[Dict[str, Any]] = [
         "fiber": 2.0,
         "sugar": 1.5,
         "sodium": 410.0,
-        "category": "Snacks"
+        "category": "Snacks & Chaat",
+        "region": "All-India"
     },
     {
-        "name": "Spiced Buttermilk (Chaas - 1 glass)",
+        "name": "Aloo Tikki (Crispy Spiced Potato Cutlet - 2 pcs)",
+        "calories": 240.0,
+        "protein": 3.8,
+        "carbs": 34.0,
+        "fat": 10.5,
+        "fiber": 3.0,
+        "sugar": 2.0,
+        "sodium": 380.0,
+        "category": "Snacks & Chaat",
+        "region": "All-India"
+    },
+    {
+        "name": "Paneer Kathi Roll (Whole Wheat Roll with Grilled Paneer)",
+        "calories": 320.0,
+        "protein": 14.0,
+        "carbs": 36.0,
+        "fat": 14.0,
+        "fiber": 3.8,
+        "sugar": 2.5,
+        "sodium": 430.0,
+        "category": "Snacks & Chaat",
+        "region": "All-India"
+    },
+    {
+        "name": "Masala Sweet Corn (Steamed Corn with Spices & Butter)",
+        "calories": 140.0,
+        "protein": 3.5,
+        "carbs": 26.0,
+        "fat": 3.0,
+        "fiber": 3.2,
+        "sugar": 4.5,
+        "sodium": 220.0,
+        "category": "Snacks & Chaat",
+        "region": "All-India"
+    },
+    {
+        "name": "Roasted Masala Papad (Roasted Lentil Crisp with Veggies - 1 pc)",
+        "calories": 65.0,
+        "protein": 3.2,
+        "carbs": 11.0,
+        "fat": 0.8,
+        "fiber": 2.0,
+        "sugar": 1.0,
+        "sodium": 240.0,
+        "category": "Snacks & Chaat",
+        "region": "All-India"
+    },
+
+    # =========================================================================
+    # BEVERAGES & TRADITIONAL DRINKS (पारंपरिक पेय)
+    # =========================================================================
+    {
+        "name": "Spiced Buttermilk (Chaas / Mattha - 1 glass)",
         "calories": 45.0,
         "protein": 3.0,
         "carbs": 4.5,
@@ -197,16 +1273,203 @@ INDIAN_FOOD_DATASET: List[Dict[str, Any]] = [
         "fiber": 0.2,
         "sugar": 3.5,
         "sodium": 180.0,
-        "category": "Beverages"
+        "category": "Drinks & Sweets",
+        "region": "All-India"
+    },
+    {
+        "name": "Sweet Punjabi Lassi (Creamy Yogurt Drink - 1 glass)",
+        "calories": 210.0,
+        "protein": 6.5,
+        "carbs": 32.0,
+        "fat": 7.0,
+        "fiber": 0.0,
+        "sugar": 26.0,
+        "sodium": 95.0,
+        "category": "Drinks & Sweets",
+        "region": "All-India"
+    },
+    {
+        "name": "Mango Lassi (Chilled Yogurt Mango Shake - 1 glass)",
+        "calories": 240.0,
+        "protein": 5.8,
+        "carbs": 38.0,
+        "fat": 7.5,
+        "fiber": 1.0,
+        "sugar": 32.0,
+        "sodium": 85.0,
+        "category": "Drinks & Sweets",
+        "region": "All-India"
+    },
+    {
+        "name": "Masala Chai (Ginger Cardamom Spiced Tea - 1 cup)",
+        "calories": 85.0,
+        "protein": 2.5,
+        "carbs": 12.0,
+        "fat": 3.0,
+        "fiber": 0.0,
+        "sugar": 9.0,
+        "sodium": 35.0,
+        "category": "Drinks & Sweets",
+        "region": "All-India"
+    },
+    {
+        "name": "Tender Coconut Water (Fresh Natural Drink - 1 coconut)",
+        "calories": 45.0,
+        "protein": 1.5,
+        "carbs": 9.0,
+        "fat": 0.5,
+        "fiber": 2.5,
+        "sugar": 6.0,
+        "sodium": 105.0,
+        "category": "Drinks & Sweets",
+        "region": "All-India"
+    },
+    {
+        "name": "Sattu Sharbat (High-Protein Roasted Gram Drink - 1 glass)",
+        "calories": 140.0,
+        "protein": 7.5,
+        "carbs": 22.0,
+        "fat": 2.5,
+        "fiber": 5.0,
+        "sugar": 1.5,
+        "sodium": 190.0,
+        "category": "Drinks & Sweets",
+        "region": "All-India"
+    },
+    {
+        "name": "Badam Milk (Saffron Almond Warm Milk - 1 cup)",
+        "calories": 180.0,
+        "protein": 6.5,
+        "carbs": 20.0,
+        "fat": 8.5,
+        "fiber": 1.2,
+        "sugar": 16.0,
+        "sodium": 65.0,
+        "category": "Drinks & Sweets",
+        "region": "All-India"
+    },
+    {
+        "name": "Nimbu Shikanji / Fresh Lime Water (1 glass)",
+        "calories": 40.0,
+        "protein": 0.4,
+        "carbs": 10.0,
+        "fat": 0.1,
+        "fiber": 0.5,
+        "sugar": 8.0,
+        "sodium": 140.0,
+        "category": "Drinks & Sweets",
+        "region": "All-India"
+    },
+
+    # =========================================================================
+    # TRADITIONAL DESI SWEETS & DESSERTS (पारंपरिक मिठाइयां)
+    # =========================================================================
+    {
+        "name": "Rice Kheer (Cardamom Fragrant Rice Pudding - 1 bowl)",
+        "calories": 220.0,
+        "protein": 5.5,
+        "carbs": 34.0,
+        "fat": 7.5,
+        "fiber": 0.5,
+        "sugar": 22.0,
+        "sodium": 70.0,
+        "category": "Drinks & Sweets",
+        "region": "All-India"
+    },
+    {
+        "name": "Gajar Ka Halwa (Slow Cooked Carrot & Milk Pudding - 1 bowl)",
+        "calories": 260.0,
+        "protein": 4.5,
+        "carbs": 36.0,
+        "fat": 11.5,
+        "fiber": 2.5,
+        "sugar": 25.0,
+        "sodium": 65.0,
+        "category": "Drinks & Sweets",
+        "region": "All-India"
+    },
+    {
+        "name": "Gulab Jamun (Soft Khoya Balls in Rose Syrup - 2 pcs)",
+        "calories": 300.0,
+        "protein": 4.0,
+        "carbs": 48.0,
+        "fat": 11.0,
+        "fiber": 0.5,
+        "sugar": 38.0,
+        "sodium": 55.0,
+        "category": "Drinks & Sweets",
+        "region": "All-India"
+    },
+    {
+        "name": "Jalebi (Crispy Saffron Sugar Pretzels - 2 pcs)",
+        "calories": 280.0,
+        "protein": 2.5,
+        "carbs": 52.0,
+        "fat": 7.5,
+        "fiber": 0.3,
+        "sugar": 40.0,
+        "sodium": 45.0,
+        "category": "Drinks & Sweets",
+        "region": "All-India"
+    },
+    {
+        "name": "Besan Ladoo (Roasted Gram Flour & Ghee Sweet - 1 pc)",
+        "calories": 180.0,
+        "protein": 3.8,
+        "carbs": 22.0,
+        "fat": 9.0,
+        "fiber": 1.8,
+        "sugar": 14.0,
+        "sodium": 35.0,
+        "category": "Drinks & Sweets",
+        "region": "All-India"
+    },
+    {
+        "name": "Kaju Katli (Cashew Nut Silver Diamond - 2 pcs)",
+        "calories": 170.0,
+        "protein": 3.5,
+        "carbs": 19.0,
+        "fat": 9.0,
+        "fiber": 0.8,
+        "sugar": 13.0,
+        "sodium": 15.0,
+        "category": "Drinks & Sweets",
+        "region": "All-India"
+    },
+    {
+        "name": "Rasgulla (Spongy Cottage Cheese Sweet in Syrup - 2 pcs)",
+        "calories": 190.0,
+        "protein": 4.0,
+        "carbs": 38.0,
+        "fat": 2.5,
+        "fiber": 0.2,
+        "sugar": 34.0,
+        "sodium": 30.0,
+        "category": "Drinks & Sweets",
+        "region": "East India"
+    },
+    {
+        "name": "Sandesh (Delicate Bengali Chhena Sweet - 2 pcs)",
+        "calories": 150.0,
+        "protein": 4.5,
+        "carbs": 21.0,
+        "fat": 5.5,
+        "fiber": 0.2,
+        "sugar": 16.0,
+        "sodium": 25.0,
+        "category": "Drinks & Sweets",
+        "region": "East India"
     }
 ]
 
 def search_indian_food(query: str) -> List[Dict[str, Any]]:
-    """Filters dishes by name or category containing the query string."""
+    """Filters dishes by name, category, or region containing the query string."""
     q = query.strip().lower()
     if not q:
-        return INDIAN_FOOD_DATASET[:10]
+        return INDIAN_FOOD_DATASET
     return [
         dish for dish in INDIAN_FOOD_DATASET
-        if q in dish["name"].lower() or q in (dish.get("category") or "").lower()
+        if q in dish["name"].lower()
+        or q in (dish.get("category") or "").lower()
+        or q in (dish.get("region") or "").lower()
     ]

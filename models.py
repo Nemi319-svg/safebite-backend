@@ -192,6 +192,7 @@ class IndianFoodItem(BaseModel):
     sugar: Optional[float] = None
     sodium: Optional[float] = None
     category: Optional[str] = None
+    region: Optional[str] = None
 
 class IndianFoodSearchResponse(BaseModel):
     status: str
