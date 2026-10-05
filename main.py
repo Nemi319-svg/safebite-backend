@@ -618,8 +618,14 @@ def analyze_barcode(barcode: str):
         "8901491001889": ("Quaker Rolled White Oats", 389.0, 16.9, 66.3, 6.9, 0.0, 10.6, 2.0)
     }
 
-    if clean_barcode in BACKEND_BARCODE_CATALOG:
-        name, cal, prot, carbs, fat, sugar, fiber, sod = BACKEND_BARCODE_CATALOG[clean_barcode]
+    catalog_match = (
+        BACKEND_BARCODE_CATALOG.get(clean_barcode) or
+        BACKEND_BARCODE_CATALOG.get(clean_barcode.lstrip("0")) or
+        BACKEND_BARCODE_CATALOG.get("0" + clean_barcode)
+    )
+
+    if catalog_match:
+        name, cal, prot, carbs, fat, sugar, fiber, sod = catalog_match
         score, classification, reasons, _, _ = calculate_health_score(
             calories=cal, protein=prot, carbs=carbs, fat=fat, sugar=sugar, fiber=fiber, sodium=sod
         )
@@ -641,6 +647,12 @@ def analyze_barcode(barcode: str):
         import requests
         url = f"https://world.openfoodfacts.org/api/v0/product/{clean_barcode}.json"
         res = requests.get(url, timeout=5)
+        if res.status_code != 200 or res.json().get("status") != 1:
+            alt_code = clean_barcode.lstrip("0") if clean_barcode.startswith("0") else ("0" + clean_barcode)
+            alt_url = f"https://world.openfoodfacts.org/api/v0/product/{alt_code}.json"
+            alt_res = requests.get(alt_url, timeout=5)
+            if alt_res.status_code == 200 and alt_res.json().get("status") == 1:
+                res = alt_res
         if res.status_code == 200:
             data = res.json()
             if data.get("status") == 1:
