@@ -22,7 +22,7 @@ from database import engine, get_db, init_db
 import models
 from models import (
     User, Scan, SavedFood,
-    RegisterRequest, LoginRequest, AuthResponse,
+    RegisterRequest, LoginRequest, GoogleAuthRequest, AuthResponse,
     SendVerificationRequest, SendVerificationResponse,
     VerifyCodeRequest, VerifyCodeResponse,
     UserProfileRequest, UserProfileResponse,
@@ -296,6 +296,44 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
     return AuthResponse(
         status="success",
         message="Login successful.",
+        username=user.username,
+        role=user.role
+    )
+
+@app.post("/auth/google", response_model=AuthResponse, tags=["Auth"])
+def google_auth(request: GoogleAuthRequest, db: Session = Depends(get_db)):
+    clean_email = request.email.strip().lower()
+    if not is_valid_email_format(clean_email):
+        raise HTTPException(status_code=400, detail="Invalid Gmail / Google email address.")
+
+    user = db.query(User).filter(User.email == clean_email).first()
+    if not user:
+        # Generate clean unique username from Google account name or email
+        raw_name = (request.name or clean_email.split("@")[0]).strip()
+        base_username = "".join(ch for ch in raw_name if ch.isalnum() or ch in "_-")
+        if len(base_username) < 3:
+            base_username = clean_email.split("@")[0]
+
+        existing_user = db.query(User).filter(User.username == base_username).first()
+        unique_username = base_username if not existing_user else f"{base_username}_{int(time.time()) % 10000}"
+
+        user = User(
+            username=unique_username,
+            email=clean_email,
+            is_verified=True,
+            hashed_password=hash_password(secrets.token_urlsafe(16)),
+            role="user"
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        logger.info(f"New user registered via Gmail Authorization: {user.username} ({clean_email})")
+    else:
+        logger.info(f"Existing user signed in via Gmail Authorization: {user.username} ({clean_email})")
+
+    return AuthResponse(
+        status="success",
+        message="Gmail authorization successful. Welcome to SafeBite!",
         username=user.username,
         role=user.role
     )

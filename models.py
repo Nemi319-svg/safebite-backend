@@ -112,6 +112,12 @@ class LoginRequest(BaseModel):
     username: str
     password: str
 
+class GoogleAuthRequest(BaseModel):
+    email: str
+    name: Optional[str] = None
+    google_id: Optional[str] = None
+    id_token: Optional[str] = None
+
 class AuthResponse(BaseModel):
     status: str
     message: str
