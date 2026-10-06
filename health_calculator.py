@@ -125,78 +125,157 @@ def calculate_health_score(
     return final_score, classification, reasons, benefits, concerns
 
 
-def get_healthier_alternatives(product_name: str, classification: str) -> List[str]:
+def get_healthier_alternatives(
+    product_name: str,
+    classification: str,
+    ingredients: str = "",
+    calories: float = 0.0,
+    fat: float = 0.0,
+    carbs: float = 0.0
+) -> List[str]:
     """
-    Returns curated, realistic healthier food alternatives based on product category.
+    Returns curated, realistic healthier food alternatives strictly tailored to the product's category.
     """
     p_lower = (product_name or "").lower()
+    i_lower = (ingredients or "").lower()
+    text = f"{p_lower} {i_lower}"
 
-    if any(k in p_lower for k in ["chip", "crisp", "wafer", "nacho", "dorito", "lays", "kurkure", "snack"]):
+    # 1. Carbonated Soft Drinks & Energy Drinks (Cold Drinks)
+    if any(k in text for k in [
+        "cola", "coca", "pepsi", "sprite", "fanta", "limca", "thums up", "mountain dew",
+        "7up", "mirinda", "sting", "red bull", "monster", "energy drink", "cold drink",
+        "soda", "carbonated", "soft drink", "appy fizz", "fizzy", "tonic water", "ginger ale"
+    ]) or (fat <= 0.5 and carbs > 6.0 and 20.0 <= calories <= 75.0 and "drink" in text):
         return [
-            "Roasted makhana (fox nuts) with olive oil & turmeric",
-            "Air-popped popcorn (unsalted/light pink salt)",
-            "Baked ragi & beetroot crisps",
-            "Roasted salted chana (chickpeas)"
+            "🥥 Fresh Tender Coconut Water (Nariyal Pani) — 100% natural electrolytes, zero added sugar",
+            "🥛 Spiced Masala Buttermilk (Chaas) with roasted jeera & mint — gut probiotics",
+            "🍋 Fresh Mint Nimbu Pani (Lime Soda) with rock salt & soaked chia seeds",
+            "🌾 Chilled Sattu Sharbat (roasted gram drink) — high natural plant protein & cooling energy",
+            "🍃 Unsweetened Iced Green Tea with lemon slices & mint leaves — antioxidant rich",
+            "🥭 Natural Bel Sharbat or Raw Mango Aam Panna (prepared with jaggery)"
         ]
-    elif any(k in p_lower for k in ["noodle", "maggi", "ramen", "pasta", "yippee"]):
+
+    # 2. Packaged Juices & Nectars
+    elif any(k in text for k in [
+        "frooti", "maaza", "slice", "fruit juice", "real juice", "tropicana", "nectar",
+        "squash", "sharbat", "fruit drink", "pulp", "mango drink", "guava juice", "orange juice"
+    ]):
         return [
-            "Whole wheat millet noodles with fresh veggies",
-            "Steamed vegetable vermicelli (seviyan upma)",
-            "Vegetable oats khichdi",
-            "Zucchini noodles (zoodles) with stir-fry veggies"
+            "🍊 Fresh Whole Seasonal Fruits (Orange, Mosambi, Guava) — preserves essential dietary fiber",
+            "🥤 Freshly Squeezed Cold-Pressed Orange or Pomegranate Juice (with pulp, zero sugar)",
+            "🥥 Tender Coconut Water with a splash of fresh lime",
+            "🍉 Fresh Watermelon & Mint Infused Cooler (hydrating & naturally sweet)"
         ]
-    elif any(k in p_lower for k in ["biscuit", "cookie", "oreo", "parle", "rusk", "cream"]):
+
+    # 3. Commercial Milk & Beverage Powders / Teas
+    elif any(k in text for k in [
+        "horlicks", "bournvita", "boost", "complan", "nescafe", "bru", "chai", "tea",
+        "coffee", "latte", "frappe", "cappuccino", "amul kool", "milkshake", "shake"
+    ]):
         return [
-            "Ragi (finger millet) whole grain cookies",
-            "Oatmeal banana seed bake bites",
-            "Almond flour & flaxseed crackers",
-            "Roasted pumpkin & sunflower seed mix"
+            "☕ Freshly brewed Filter Coffee or Black Americano without refined white sugar",
+            "☕ Traditional Spiced Masala Chai brewed with crushed ginger, cardamom & clove",
+            "🥛 Golden Turmeric Milk (Haldi Doodh) with a pinch of black pepper & cinnamon",
+            "🌰 Homemade Badam Milk prepared with crushed almonds & natural jaggery"
         ]
-    elif any(k in p_lower for k in ["soda", "coke", "pepsi", "fanta", "sprite", "energy", "drink", "juice", "frooti", "maaza"]):
+
+    # 4. Chips & Extruded Snacks
+    elif any(k in text for k in [
+        "chip", "crisp", "wafer", "nacho", "dorito", "lays", "kurkure", "bingo", "pringles", "cheetos"
+    ]):
         return [
-            "Fresh tender coconut water (natural electrolytes)",
-            "Spiced probiotic buttermilk (chaas) with roasted cumin",
-            "Infused lemon mint cucumber cooler",
-            "Fresh unsweetened seasonal lime water"
+            "🍿 Roasted Makhana (Fox Nuts) with cold-pressed olive oil & pink rock salt",
+            "🌾 Baked Jowar / Ragi chips or air-dried beetroot crisps (low oil)",
+            "🥜 Roasted Salted Chana (chickpeas) & roasted peanuts mix",
+            "🥗 Sprouted Moong & Boiled Sweet Corn Chaat with lemon dressing"
         ]
-    elif any(k in p_lower for k in ["chocolate", "candy", "sweet", "bar", "mithai", "cake", "pastry", "donut"]):
+
+    # 5. Namkeen & Fried Savories
+    elif any(k in text for k in [
+        "namkeen", "bhujia", "sev", "samosa", "pakora", "kachori", "fried", "dal biji",
+        "chivda", "mathri", "mixture", "haldiram", "bikaji", "balaji"
+    ]):
         return [
-            "Dark chocolate (>=75% cacao - antioxidant rich)",
-            "Medjool dates stuffed with roasted walnuts",
-            "Anjeer (figs) & unsalted nut trail mix",
-            "Greek yogurt topped with fresh berries & chia seeds"
+            "🌾 Roasted Puffed Rice (Jhalmuri / murmura bhel) with chopped tomatoes & lime",
+            "🫘 Steamed Sprouted Kala Chana with fresh coriander & chaat masala",
+            "🫓 Baked Methi / Palak whole wheat mathri (zero trans fat)",
+            "🌰 Roasted Masala Edamame or spiced lotus seeds"
         ]
-    elif any(k in p_lower for k in ["burger", "pizza", "fries", "frankie", "roll"]):
+
+    # 6. Biscuits, Cookies & Bakery
+    elif any(k in text for k in [
+        "biscuit", "cookie", "oreo", "parle", "rusk", "cream biscuit", "good day", "bourbon",
+        "marie", "dark fantasy", "monaco", "krackjack", "hide & seek", "cracker", "cake"
+    ]):
         return [
-            "Whole wheat grilled vegetable & paneer wrap",
-            "Air-fried sweet potato wedges with rosemary",
-            "Cauliflower / millet crust vegetable pizza",
-            "Sprouted rajma & oats vegetable patty"
+            "🍪 Homemade Rolled Oats & Mashed Banana Cookies (zero maida, zero white sugar)",
+            "🌾 Ragi (Finger Millet) & Jaggery whole grain digestive biscuits",
+            "🌰 Medjool Dates stuffed with raw walnuts & California almonds",
+            "🥣 Roasted Pumpkin, Flax & Sunflower seed trail mix"
         ]
-    elif any(k in p_lower for k in ["namkeen", "bhujia", "sev", "samosa", "pakora", "kachori", "fried"]):
+
+    # 7. Instant Noodles & Pasta
+    elif any(k in text for k in [
+        "noodle", "maggi", "ramen", "pasta", "yippee", "macaroni", "spaghetti", "hakka", "chowmein", "wai wai"
+    ]):
         return [
-            "Roasted puffed rice (jhalmuri / roasted bhel)",
-            "Baked moong dal & peanut mixture",
-            "Air-fried vegetable cutlets (zero trans fat)",
-            "Sprouted chana chaat with lemon & pomegranate"
+            "🍜 100% Foxtail Millet or Whole Wheat Noodles with sauteed vegetables",
+            "🥕 Steamed Vegetable Vermicelli (Seviyan Upma) with mustard seeds & curry leaves",
+            "🥣 Vegetable Rolled Oats Khichdi cooked with fresh peas & carrots",
+            "🥒 Zucchini Ribbon Noodles (Zoodles) with homemade fresh tomato basil sauce"
         ]
+
+    # 8. Chocolates, Candies & Sweets
+    elif any(k in text for k in [
+        "chocolate", "candy", "sweet", "bar", "mithai", "cake", "pastry", "donut", "dairy milk",
+        "kitkat", "5 star", "munch", "perk", "snickers", "milkybar", "gems", "toffee"
+    ]):
+        return [
+            "🍫 Dark Chocolate (>=70% Cacao) — rich in heart-healthy flavonoids",
+            "🌴 Soft Khajoor (Dates) & roasted almond/walnut energy bites",
+            "🍯 Anjeer (Dried Figs) & raw cashew nut trail mix",
+            "🥥 Homemade Dry Fruit & Jaggery Besan/Atta Laddu (no refined white sugar)"
+        ]
+
+    # 9. Ice Creams & Frozen Desserts
+    elif any(k in text for k in ["ice cream", "icecream", "kulfi", "sundae", "gelato", "dessert"]):
+        return [
+            "🍧 Frozen Banana 'Nice Cream' blended with raw cocoa powder & almond milk",
+            "🥣 Creamy Greek Yogurt or Hung Curd topped with fresh berries & chia seeds",
+            "🥭 Homemade Mango & Chia Seed Pudding made with coconut milk",
+            "🥛 Chilled Badam Kheer sweetened naturally with crushed dates"
+        ]
+
+    # 10. Fast Food & Burgers / Pizzas
+    elif any(k in text for k in ["burger", "pizza", "fries", "frankie", "roll", "sandwich", "patty"]):
+        return [
+            "🌯 Whole Wheat Grilled Paneer & Capsicum Wrap with mint curd spread",
+            "🍟 Air-Fried Sweet Potato Wedges tossed with herbs & olive oil",
+            "🍕 Thin-Crust Millet / Ragi base vegetable pizza with homemade cottage cheese",
+            "🧆 Sprouted Rajma & Oats vegetable cutlets with coriander-mint chutney"
+        ]
+
+    # 11. Sauces & Spreads
+    elif any(k in text for k in ["ketchup", "sauce", "mayonnaise", "mayo", "spread", "jam", "nutella", "dip"]):
+        return [
+            "🌿 Fresh homemade Dhania-Pudina (Coriander-Mint) Chutney",
+            "🫒 Homemade Creamy Hummus drizzled with extra virgin olive oil",
+            "🥣 Hung Curd Garlic & Herb Dip (high protein, zero trans fat)",
+            "🍅 Fresh Homemade Tomato & Jalapeno Salsa (zero corn syrup)"
+        ]
+
+    # 12. General Fallback
     else:
-        if classification == "Unhealthy":
+        if classification == "Healthy":
             return [
-                "Fresh seasonal whole fruits (apple, papaya, guava)",
-                "Handful of roasted unsalted almonds & walnuts",
-                "Sprouted moong & corn salad with lemon dressing",
-                "Roasted makhana or chana snack"
-            ]
-        elif classification == "Moderate":
-            return [
-                "Pair with fresh cucumber/carrot salad for added fiber",
-                "Switch to whole grain or less processed version",
-                "Control portion size and drink plenty of water"
+                "🌟 Keep up the clean eating habits!",
+                "💧 Pair with ample water throughout the day for optimal digestion",
+                "🥜 Add a handful of soaked almonds or walnuts for essential omega-3s"
             ]
         else:
             return [
-                "Keep up the clean eating habits!",
-                "Pair with fresh water for maximum nutrient absorption",
-                "Include a handful of soaked almonds or walnuts"
+                "🥗 Fresh seasonal whole fruits (Apple, Papaya, Guava, Orange) for dietary fiber",
+                "🥜 Handful of soaked almonds, walnuts, and pumpkin seeds",
+                "🥗 Sprouted Moong & Paneer Salad with lemon dressing & rock salt",
+                "🍿 Lightly roasted Makhana with turmeric and black pepper"
             ]

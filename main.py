@@ -413,7 +413,14 @@ def analyze_manual(request: ManualAnalysisRequest, db: Session = Depends(get_db)
         is_diabetic=is_diabetic
     )
 
-    alternatives = get_healthier_alternatives(request.product_name, classification)
+    alternatives = get_healthier_alternatives(
+        product_name=request.product_name,
+        classification=classification,
+        ingredients=request.ingredients or "",
+        calories=request.calories,
+        fat=request.fat,
+        carbs=request.carbs
+    )
     analysis_text = f"Classified as {classification} ({int(score)}/100). " + " ".join(reasons)
 
     # Save to history if user is known
@@ -534,7 +541,14 @@ async def analyze_image(
         is_diabetic=is_diabetic
     )
 
-    alternatives = get_healthier_alternatives(product_name, classification)
+    alternatives = get_healthier_alternatives(
+        product_name=product_name,
+        classification=classification,
+        ingredients=ingredients_str,
+        calories=calories,
+        fat=fat,
+        carbs=carbs
+    )
     analysis_text = f"Classified as {classification} ({int(score)}/100). " + " ".join(reasons)
 
     # Save to Scan database history
@@ -594,28 +608,146 @@ def analyze_barcode(barcode: str):
 
     # 1. Check Indian Barcode Catalog
     BACKEND_BARCODE_CATALOG = {
-        "8906002040006": ("Amul Taaza Homogenised Toned Milk", 58.0, 3.1, 4.7, 3.0, 4.7, 0.0, 50.0),
-        "8901058079803": ("Fortune Everyday Basmati Rice", 350.0, 8.5, 78.0, 0.5, 0.0, 1.5, 5.0),
-        "8901058852444": ("Maggi 2-Minute Masala Noodles", 427.0, 8.0, 63.5, 15.7, 2.2, 3.6, 1020.0),
+        # === COLD DRINKS, SODAS & ENERGY DRINKS ===
+        "8901764012235": ("Coca-Cola Original Taste", 44.0, 0.0, 10.6, 0.0, 10.6, 0.0, 8.5),
+        "8901764012228": ("Coca-Cola Can (300ml)", 44.0, 0.0, 10.6, 0.0, 10.6, 0.0, 8.5),
+        "8901764012358": ("Coca-Cola Zero Sugar", 0.3, 0.0, 0.0, 0.0, 0.0, 0.0, 9.0),
+        "8901764012112": ("Diet Coke", 0.4, 0.0, 0.0, 0.0, 0.0, 0.0, 11.0),
+        "8901764022234": ("Thums Up Strong Cola", 40.0, 0.0, 10.0, 0.0, 10.0, 0.0, 12.0),
+        "8901764022227": ("Thums Up Can", 40.0, 0.0, 10.0, 0.0, 10.0, 0.0, 12.0),
+        "8901764022357": ("Thums Up Charged Cola", 44.0, 0.0, 11.0, 0.0, 10.8, 0.0, 14.0),
+        "8901764032233": ("Sprite Clear Lemon-Lime Soda", 48.0, 0.0, 12.0, 0.0, 11.8, 0.0, 15.0),
+        "8901764031236": ("Sprite Lemon-Lime Pet Bottle", 48.0, 0.0, 12.0, 0.0, 11.8, 0.0, 15.0),
+        "8901764031175": ("Sprite Can (300ml)", 48.0, 0.0, 12.0, 0.0, 11.8, 0.0, 15.0),
+        "8901764041235": ("Fanta Orange Flavoured Drink", 52.0, 0.0, 13.0, 0.0, 12.8, 0.0, 14.0),
+        "8901764042232": ("Fanta Orange Can", 52.0, 0.0, 13.0, 0.0, 12.8, 0.0, 14.0),
+        "8901764051234": ("Limca Fresh Lemon Drink", 40.0, 0.0, 10.0, 0.0, 9.8, 0.0, 18.0),
+        "8901764052231": ("Limca Lime 'N' Lemon Can", 40.0, 0.0, 10.0, 0.0, 9.8, 0.0, 18.0),
+        "8902080000403": ("Pepsi Cola Refreshing Drink", 43.0, 0.0, 10.7, 0.0, 10.7, 0.0, 11.0),
+        "8902080000014": ("Pepsi Regular Can", 43.0, 0.0, 10.7, 0.0, 10.7, 0.0, 11.0),
+        "8902080000458": ("Pepsi Black Zero Calorie Can", 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 12.0),
+        "8902080105022": ("Mountain Dew Citrus Drink", 49.0, 0.0, 12.3, 0.0, 12.1, 0.0, 16.0),
+        "8902080015025": ("Mountain Dew Bottle", 49.0, 0.0, 12.3, 0.0, 12.1, 0.0, 16.0),
+        "8902080020401": ("7Up Lemon-Lime Carbonated Drink", 44.0, 0.0, 11.0, 0.0, 10.8, 0.0, 15.0),
+        "8902080102021": ("7Up Nimbooz Masala Soda", 42.0, 0.0, 10.5, 0.0, 10.2, 0.0, 120.0),
+        "8902080030400": ("Mirinda Orange Soft Drink", 54.0, 0.0, 13.5, 0.0, 13.2, 0.0, 13.0),
+        "8902080021231": ("Sting Energy Drink (Red)", 28.0, 0.0, 7.0, 0.0, 6.8, 0.0, 35.0),
+        "8902080404019": ("Sting Energy Drink Pet Bottle", 28.0, 0.0, 7.0, 0.0, 6.8, 0.0, 35.0),
+        "9002490100070": ("Red Bull Energy Drink (250ml)", 45.0, 0.0, 11.0, 0.0, 11.0, 0.0, 80.0),
+        "90162602": ("Red Bull Energy Drink Can", 45.0, 0.0, 11.0, 0.0, 11.0, 0.0, 80.0),
+        "5060166692246": ("Monster Energy Drink Original", 47.0, 0.0, 12.0, 0.0, 11.0, 0.0, 76.0),
+        "8901764071232": ("Kinley Strong Club Soda", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 15.0),
+        "8906017290038": ("Bisleri Club Soda", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0),
+        "8906017290014": ("Bisleri Packaged Drinking Water", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0),
+        "8902080040409": ("Aquafina Purified Drinking Water", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0),
+
+        # === PACKAGED JUICES & DAIRY DRINKS ===
+        "8901063092040": ("Frooti Fresh 'N' Juicy Mango", 65.0, 0.0, 16.2, 0.0, 15.8, 0.2, 18.0),
+        "8901725112103": ("Frooti Mango Drink Bottle", 65.0, 0.0, 16.2, 0.0, 15.8, 0.2, 18.0),
+        "8901764061233": ("Maaza Mango Drink", 62.0, 0.2, 15.4, 0.0, 15.0, 0.3, 16.0),
+        "8901764062230": ("Maaza Mango Bottle (600ml)", 62.0, 0.2, 15.4, 0.0, 15.0, 0.3, 16.0),
+        "8902080050408": ("Slice Thickest Mango Drink", 64.0, 0.1, 16.0, 0.0, 15.5, 0.2, 19.0),
+        "8901725181109": ("Appy Fizz Sparkling Apple Juice", 58.0, 0.0, 14.5, 0.0, 14.0, 0.0, 12.0),
+        "8901207010118": ("Real Fruit Power Mixed Fruit", 56.0, 0.4, 13.6, 0.0, 13.0, 0.5, 20.0),
+        "8901207010156": ("Real Fruit Power Guava Juice", 60.0, 0.3, 14.7, 0.0, 13.5, 1.2, 22.0),
+        "8901207010149": ("Real Fruit Power Orange Juice", 52.0, 0.6, 12.4, 0.0, 11.8, 0.4, 18.0),
+        "8902080060407": ("Tropicana 100% Orange Juice", 48.0, 0.8, 11.2, 0.1, 10.5, 0.6, 10.0),
+        "8906080600024": ("Paper Boat Aam Panna", 72.0, 0.1, 18.0, 0.0, 16.5, 0.4, 140.0),
+        "8906080600048": ("Paper Boat Jaljeera Cooler", 42.0, 0.2, 10.5, 0.0, 9.8, 0.2, 380.0),
+        "8906080600017": ("Paper Boat Alphonso Aamras", 78.0, 0.3, 19.5, 0.0, 18.0, 0.6, 20.0),
+        "8906002041010": ("Amul Kool Kesar Flavoured Milk", 85.0, 3.2, 12.0, 2.7, 11.5, 0.0, 60.0),
+        "8906002041027": ("Amul Kool Badam Flavoured Milk", 88.0, 3.4, 12.5, 2.8, 11.8, 0.0, 65.0),
+        "8906002042017": ("Amul Masti Spiced Buttermilk", 28.0, 1.8, 2.5, 1.2, 2.2, 0.0, 310.0),
+        "8906002042031": ("Amul Lassi Sweet & Creamy", 96.0, 2.8, 15.0, 2.8, 14.2, 0.0, 55.0),
+
+        # === BISCUITS & COOKIES ===
         "8901719101038": ("Parle-G Original Gluco Biscuits", 454.0, 6.5, 78.2, 13.0, 26.5, 1.2, 280.0),
+        "8901719105012": ("Parle 20-20 Butter Cookies", 486.0, 6.0, 71.0, 20.0, 25.0, 1.1, 260.0),
+        "8901719102011": ("Parle Monaco Classic Salted", 475.0, 7.5, 69.0, 19.0, 6.5, 1.5, 750.0),
+        "8901719103018": ("Parle Krackjack Sweet & Salty", 482.0, 7.0, 70.0, 19.5, 15.0, 1.2, 540.0),
+        "8901719104015": ("Parle Hide & Seek Choco Chip", 492.0, 5.8, 72.0, 20.5, 32.0, 2.0, 240.0),
+        "8901063012826": ("Britannia Good Day Butter Cookies", 495.0, 6.0, 68.0, 22.0, 22.0, 1.0, 260.0),
+        "8901063012833": ("Britannia Good Day Cashew Cookies", 502.0, 6.5, 67.0, 23.5, 22.5, 1.2, 250.0),
+        "8901063013236": ("Britannia Bourbon Chocolate Cream", 488.0, 5.5, 72.0, 20.0, 38.0, 1.5, 220.0),
+        "8901063011010": ("Britannia Marie Gold Tea Biscuits", 446.0, 8.2, 77.0, 11.5, 21.0, 2.5, 320.0),
+        "8901063018019": ("Britannia NutriChoice Digestive", 480.0, 9.0, 66.0, 20.0, 14.5, 6.0, 480.0),
+        "8901063014011": ("Britannia 50-50 Maska Chaska", 490.0, 7.0, 68.0, 21.0, 8.0, 1.3, 720.0),
+        "8901063015018": ("Britannia Treat Jim Jam", 476.0, 5.0, 74.0, 18.0, 36.0, 1.0, 210.0),
+        "7622201764653": ("Oreo Original Vanilla Sandwich Biscuits", 480.0, 5.0, 70.0, 20.0, 38.0, 2.5, 410.0),
+        "7622201764677": ("Oreo Chocolate Creme Sandwich", 485.0, 5.2, 69.5, 20.5, 39.0, 2.6, 400.0),
+        "8901725121013": ("Sunfeast Dark Fantasy Choco Fills", 512.0, 5.5, 65.0, 25.5, 37.0, 1.8, 190.0),
+        "8901725132019": ("Sunfeast Mom's Magic Cashew Butter", 498.0, 6.2, 67.5, 22.8, 23.0, 1.2, 240.0),
+        "8901063017012": ("Britannia Toastea Premium Rusk", 432.0, 8.5, 76.5, 10.5, 22.0, 3.0, 290.0),
+
+        # === CHIPS, CRISPS & NAMKEEN ===
         "8901491101831": ("Lay's India's Magic Masala Chips", 544.0, 7.0, 52.0, 34.0, 3.0, 4.0, 780.0),
         "8901491101824": ("Lay's Classic Salted Potato Chips", 540.0, 6.8, 53.0, 33.6, 1.0, 3.8, 550.0),
-        "8901063012826": ("Britannia Good Day Butter Cookies", 495.0, 6.0, 68.0, 22.0, 22.0, 1.0, 260.0),
-        "8901063013236": ("Britannia Bourbon Chocolate Cream Biscuits", 488.0, 5.5, 72.0, 20.0, 38.0, 1.5, 220.0),
-        "8901030018596": ("Kissan Fresh Tomato Ketchup", 142.0, 1.4, 34.0, 0.1, 28.0, 0.8, 850.0),
-        "8901499008200": ("Kurkure Masala Munch", 561.0, 6.1, 55.4, 35.0, 2.5, 2.0, 890.0),
-        "8901233024844": ("Tata Salt Vacuum Evaporated Iodized", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 38700.0),
-        "8901030383793": ("Horlicks Classic Malt", 377.0, 11.0, 79.0, 2.0, 32.0, 4.0, 400.0),
-        "8901058863648": ("Nestle KitKat 4-Finger Chocolate", 518.0, 7.2, 64.5, 26.0, 45.0, 2.1, 130.0),
-        "7622201446757": ("Cadbury Dairy Milk Chocolate", 534.0, 7.8, 60.5, 29.5, 57.0, 2.0, 150.0),
-        "8901233012018": ("Cadbury Dairy Milk Chocolate", 534.0, 7.8, 60.5, 29.5, 57.0, 2.0, 150.0),
-        "7622201764653": ("Oreo Original Vanilla Sandwich Biscuits", 480.0, 5.0, 70.0, 20.0, 38.0, 2.5, 410.0),
-        "8901764012235": ("Coca-Cola Original Taste", 44.0, 0.0, 10.6, 0.0, 10.6, 0.0, 10.0),
-        "8901764022234": ("Thums Up Strong Cola", 40.0, 0.0, 10.0, 0.0, 10.0, 0.0, 12.0),
+        "8901491101848": ("Lay's American Style Cream & Onion", 542.0, 6.9, 52.5, 33.8, 4.0, 3.6, 680.0),
+        "8901491101855": ("Lay's Spanish Tomato Tango", 538.0, 6.5, 54.0, 33.0, 6.5, 3.5, 710.0),
+        "8901499008200": ("Kurkure Masala Munch Crunchy Snack", 561.0, 6.1, 55.4, 35.0, 2.5, 2.0, 890.0),
+        "8901499008224": ("Kurkure Green Chutney Style", 558.0, 6.0, 56.0, 34.5, 3.0, 2.1, 870.0),
+        "8901725131012": ("Bingo! Mad Angles Achaari Masti", 548.0, 6.4, 55.0, 33.5, 3.5, 3.2, 820.0),
+        "8901725131036": ("Bingo! Tedhe Medhe Masala Tadka", 555.0, 6.2, 56.2, 34.0, 2.8, 2.4, 880.0),
         "8904063200114": ("Haldiram's Nagpur Bhujia Sev", 588.0, 14.0, 41.0, 41.0, 2.0, 4.5, 780.0),
         "8904063200121": ("Haldiram's Aloo Bhujia", 582.0, 8.5, 43.0, 42.0, 2.0, 3.8, 760.0),
+        "8904063200138": ("Haldiram's Khatta Meetha Namkeen", 542.0, 10.0, 52.0, 32.5, 12.0, 4.0, 620.0),
+        "8904063200145": ("Haldiram's Salted Moong Dal", 480.0, 22.0, 45.0, 24.0, 0.5, 6.5, 490.0),
+        "8904063200152": ("Haldiram's Nut Cracker Spiced Peanuts", 590.0, 18.0, 35.0, 42.0, 3.0, 5.0, 750.0),
+        "8906010500112": ("Balaji Wafers Masala", 545.0, 6.8, 52.0, 34.0, 3.2, 3.5, 740.0),
+        "8886467100024": ("Pringles Original Potato Crisps", 522.0, 4.0, 54.0, 32.0, 0.8, 2.6, 510.0),
+        "8886467100017": ("Pringles Sour Cream & Onion", 525.0, 4.2, 53.5, 32.5, 2.5, 2.7, 620.0),
+
+        # === CHOCOLATES & CONFECTIONERY ===
+        "7622201446757": ("Cadbury Dairy Milk Chocolate", 534.0, 7.8, 60.5, 29.5, 57.0, 2.0, 150.0),
+        "8901233012018": ("Cadbury Dairy Milk Chocolate", 534.0, 7.8, 60.5, 29.5, 57.0, 2.0, 150.0),
+        "7622201446801": ("Cadbury Dairy Milk Silk", 545.0, 7.5, 59.0, 31.5, 55.0, 1.8, 140.0),
+        "7622201447013": ("Cadbury 5 Star Chocolate Bar", 460.0, 3.5, 71.0, 18.0, 52.0, 1.2, 180.0),
+        "7622201448010": ("Cadbury Perk Glucose Wafer", 498.0, 4.8, 68.0, 23.0, 44.0, 1.5, 170.0),
+        "7622201449017": ("Cadbury Fuse Peanut Chocolate", 528.0, 10.5, 54.0, 30.0, 42.0, 3.0, 190.0),
+        "8901058863648": ("Nestle KitKat 4-Finger Chocolate", 518.0, 7.2, 64.5, 26.0, 45.0, 2.1, 130.0),
+        "8901058861019": ("Nestle Munch Crunchy Wafer", 478.0, 5.0, 69.5, 20.0, 43.0, 1.6, 160.0),
+        "8901058862016": ("Nestle Milkybar White Chocolate", 532.0, 8.8, 56.0, 30.5, 54.0, 0.0, 180.0),
+        "8906002047012": ("Amul 55% Rich Dark Chocolate", 540.0, 5.2, 58.0, 32.0, 43.0, 6.5, 40.0),
+        "8000500003787": ("Ferrero Rocher Hazelnut Praline", 595.0, 8.2, 44.4, 42.7, 39.9, 3.5, 120.0),
+
+        # === NOODLES, PASTA & INSTANT FOODS ===
+        "8901058852444": ("Maggi 2-Minute Masala Noodles", 427.0, 8.0, 63.5, 15.7, 2.2, 3.6, 1020.0),
+        "8901058852505": ("Maggi Nutri-licious Atta Masala", 405.0, 10.2, 64.0, 12.0, 2.5, 6.8, 880.0),
+        "8901725141011": ("Sunfeast YiPPee! Magic Masala Noodles", 468.0, 9.0, 64.0, 19.5, 3.0, 3.5, 990.0),
+        "8901014001015": ("Top Ramen Curry Veg Noodles", 440.0, 8.5, 63.0, 17.0, 2.8, 3.2, 1050.0),
+        "8901595850017": ("Ching's Secret Hakka Veg Noodles", 355.0, 11.0, 74.0, 1.2, 1.0, 2.5, 340.0),
+        "8901595850024": ("Ching's Secret Schezwan Chutney", 195.0, 2.0, 25.0, 10.0, 14.0, 1.8, 1450.0),
+
+        # === CEREALS, GRAINS & STAPLES ===
+        "8901491001889": ("Quaker Rolled White Oats", 389.0, 16.9, 66.3, 6.9, 0.0, 10.6, 2.0),
+        "8901088001018": ("Saffola 100% Natural Rolled Oats", 386.0, 12.6, 66.8, 7.8, 0.5, 10.4, 4.0),
+        "8901088002015": ("Saffola Masala Oats Classic Masala", 390.0, 9.5, 67.0, 9.2, 4.5, 7.8, 820.0),
         "8901499010340": ("Kellogg's Corn Flakes Original", 378.0, 6.8, 84.0, 0.8, 8.0, 2.7, 460.0),
-        "8901491001889": ("Quaker Rolled White Oats", 389.0, 16.9, 66.3, 6.9, 0.0, 10.6, 2.0)
+        "8901499010401": ("Kellogg's Chocos Crunchy Chocolate", 388.0, 8.2, 82.5, 2.8, 30.0, 4.5, 380.0),
+        "8901058079803": ("Fortune Everyday Basmati Rice", 350.0, 8.5, 78.0, 0.5, 0.0, 1.5, 5.0),
+        "8901233024844": ("Tata Salt Vacuum Evaporated Iodized", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 38700.0),
+        "8901088003012": ("Saffola Gold Pro Healthy Heart Oil", 900.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0),
+
+        # === DAIRY & SPREADS ===
+        "8906002040006": ("Amul Taaza Homogenised Toned Milk", 58.0, 3.1, 4.7, 3.0, 4.7, 0.0, 50.0),
+        "8906002040020": ("Amul Gold Full Cream Milk", 87.0, 3.5, 5.0, 6.0, 5.0, 0.0, 52.0),
+        "8906002043014": ("Amul Pasteurized Butter", 722.0, 0.6, 0.0, 80.0, 0.0, 0.0, 830.0),
+        "8906002044011": ("Amul Processed Cheese Slices", 320.0, 20.0, 2.0, 26.0, 2.0, 0.0, 1420.0),
+        "8906002045018": ("Amul Fresh Malai Paneer", 289.0, 18.5, 3.2, 22.0, 2.0, 0.0, 30.0),
+        "8901030018596": ("Kissan Fresh Tomato Ketchup", 142.0, 1.4, 34.0, 0.1, 28.0, 0.8, 850.0),
+        "8901030019012": ("Kissan Mixed Fruit Jam", 285.0, 0.4, 70.0, 0.1, 65.0, 1.2, 40.0),
+        "8000500179864": ("Nutella Hazelnut Cocoa Spread", 539.0, 6.3, 57.5, 30.9, 56.3, 3.0, 42.0),
+        "8906069400010": ("Veeba Truly Tomato Ketchup", 136.0, 1.2, 32.5, 0.1, 26.0, 0.9, 790.0),
+
+        # === TEA, COFFEE & COMMERCIAL HEALTH DRINKS ===
+        "8901030383793": ("Horlicks Classic Malt", 377.0, 11.0, 79.0, 2.0, 32.0, 4.0, 400.0),
+        "7622201752001": ("Cadbury Bournvita Chocolate Drink", 380.0, 7.0, 85.0, 1.8, 32.0, 3.5, 310.0),
+        "8901030381010": ("Boost Energy & Stamina Drink", 375.0, 7.5, 82.0, 2.5, 34.0, 3.2, 350.0),
+        "8901058860012": ("Nescafe Classic 100% Pure Coffee", 118.0, 7.0, 14.0, 0.2, 0.0, 0.0, 50.0),
+        "8901030020018": ("Bru Instant Coffee Chicory Mix", 125.0, 6.5, 16.0, 0.3, 0.0, 0.0, 45.0),
+        "8901030010019": ("Brooke Bond Taj Mahal Premium Tea", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+        "8901030009013": ("Brooke Bond Red Label Strong Tea", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+        "8901052001015": ("Tata Tea Gold Refreshing Blend", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
     }
 
     catalog_match = (
@@ -629,7 +761,14 @@ def analyze_barcode(barcode: str):
         score, classification, reasons, _, _ = calculate_health_score(
             calories=cal, protein=prot, carbs=carbs, fat=fat, sugar=sugar, fiber=fiber, sodium=sod
         )
-        alts = get_healthier_alternatives(name, classification)
+        alts = get_healthier_alternatives(
+            product_name=name,
+            classification=classification,
+            ingredients="",
+            calories=cal,
+            fat=fat,
+            carbs=carbs
+        )
         rec = f"Product contains {int(cal)} kcal, {prot}g protein, {carbs}g carbs, {fat}g fat per 100g. Classified as {classification}."
         return BarcodeResponse(
             status="success",
@@ -642,47 +781,65 @@ def analyze_barcode(barcode: str):
             healthier_alternatives=alts
         )
 
-    # 2. Query OpenFoodFacts API
+    # 2. Query OpenFoodFacts API with proper User-Agent and multi-endpoint support
     try:
         import requests
-        url = f"https://world.openfoodfacts.org/api/v0/product/{clean_barcode}.json"
-        res = requests.get(url, timeout=5)
-        if res.status_code != 200 or res.json().get("status") != 1:
-            alt_code = clean_barcode.lstrip("0") if clean_barcode.startswith("0") else ("0" + clean_barcode)
-            alt_url = f"https://world.openfoodfacts.org/api/v0/product/{alt_code}.json"
-            alt_res = requests.get(alt_url, timeout=5)
-            if alt_res.status_code == 200 and alt_res.json().get("status") == 1:
-                res = alt_res
-        if res.status_code == 200:
-            data = res.json()
-            if data.get("status") == 1:
-                p = data.get("product", {})
-                nutr = p.get("nutriments", {})
-                name = p.get("product_name") or "Packaged Product"
-                cal = float(nutr.get("energy-kcal_100g") or nutr.get("energy-kcal") or 150.0)
-                fat = float(nutr.get("fat_100g") or nutr.get("fat") or 5.0)
-                prot = float(nutr.get("proteins_100g") or nutr.get("proteins") or 3.0)
-                carbs = float(nutr.get("carbohydrates_100g") or nutr.get("carbohydrates") or 20.0)
-                sugar = float(nutr.get("sugars_100g") or 0.0)
-                fiber = float(nutr.get("fiber_100g") or 0.0)
-                sod = float(nutr.get("sodium_100g") or 0.0) * 1000.0 # g to mg
+        headers = {"User-Agent": "SafeBite-Backend/1.0 (contact@safebite.app)"}
+        candidate_codes = [clean_barcode]
+        if clean_barcode.startswith("0"):
+            candidate_codes.append(clean_barcode.lstrip("0"))
+        else:
+            candidate_codes.append("0" + clean_barcode)
 
-                score, classification, reasons, _, _ = calculate_health_score(
-                    calories=cal, protein=prot, carbs=carbs, fat=fat, sugar=sugar, fiber=fiber, sodium=sod
-                )
-                alts = get_healthier_alternatives(name, classification)
-                rec = f"Product contains {int(cal)} kcal, {prot}g protein, {carbs}g carbs, {fat}g fat per 100g. Classified as {classification}."
+        for code in candidate_codes:
+            endpoints = [
+                f"https://world.openfoodfacts.org/api/v2/product/{code}",
+                f"https://world.openfoodfacts.org/api/v0/product/{code}.json",
+                f"https://in.openfoodfacts.org/api/v0/product/{code}.json"
+            ]
+            for ep in endpoints:
+                try:
+                    res = requests.get(ep, headers=headers, timeout=8)
+                    if res.status_code == 200:
+                        data = res.json()
+                        if data.get("status") == 1 and "product" in data:
+                            p = data.get("product", {})
+                            nutr = p.get("nutriments", {})
+                            name = p.get("product_name") or p.get("product_name_en") or "Packaged Food Item"
+                            cal = float(nutr.get("energy-kcal_100g") or nutr.get("energy-kcal") or 150.0)
+                            fat = float(nutr.get("fat_100g") or nutr.get("fat") or 5.0)
+                            prot = float(nutr.get("proteins_100g") or nutr.get("proteins") or 3.0)
+                            carbs = float(nutr.get("carbohydrates_100g") or nutr.get("carbohydrates") or 20.0)
+                            sugar = float(nutr.get("sugars_100g") or 0.0)
+                            fiber = float(nutr.get("fiber_100g") or 0.0)
+                            sod = float(nutr.get("sodium_100g") or 0.0) * 1000.0 # g to mg
+                            ing_text = p.get("ingredients_text") or ""
 
-                return BarcodeResponse(
-                    status="success",
-                    product_name=name,
-                    nutrition=NutritionData(calories=cal, protein=prot, carbs=carbs, fat=fat, sugar=sugar, fiber=fiber, sodium=sod),
-                    health_score=score,
-                    classification=classification,
-                    category=classification,
-                    recommendation=rec,
-                    healthier_alternatives=alts
-                )
+                            score, classification, reasons, _, _ = calculate_health_score(
+                                calories=cal, protein=prot, carbs=carbs, fat=fat, sugar=sugar, fiber=fiber, sodium=sod
+                            )
+                            alts = get_healthier_alternatives(
+                                product_name=name,
+                                classification=classification,
+                                ingredients=ing_text,
+                                calories=cal,
+                                fat=fat,
+                                carbs=carbs
+                            )
+                            rec = f"Product contains {int(cal)} kcal, {prot}g protein, {carbs}g carbs, {fat}g fat per 100g. Classified as {classification}."
+
+                            return BarcodeResponse(
+                                status="success",
+                                product_name=name,
+                                nutrition=NutritionData(calories=cal, protein=prot, carbs=carbs, fat=fat, sugar=sugar, fiber=fiber, sodium=sod),
+                                health_score=score,
+                                classification=classification,
+                                category=classification,
+                                recommendation=rec,
+                                healthier_alternatives=alts
+                            )
+                except Exception as inner_e:
+                    logger.debug(f"OFF endpoint {ep} check error: {inner_e}")
     except Exception as e:
         logger.warning(f"OpenFoodFacts lookup failed: {e}")
 
