@@ -410,6 +410,8 @@ def analyze_manual(request: ManualAnalysisRequest, db: Session = Depends(get_db)
         sugar=request.sugar or 0.0,
         fiber=request.fiber or 0.0,
         sodium=request.sodium or 0.0,
+        product_name=request.product_name,
+        ingredients=request.ingredients or "",
         is_diabetic=is_diabetic
     )
 
@@ -538,6 +540,8 @@ async def analyze_image(
         sugar=sugar,
         fiber=fiber,
         sodium=sodium,
+        product_name=product_name,
+        ingredients=ingredients_str,
         is_diabetic=is_diabetic
     )
 
@@ -759,7 +763,8 @@ def analyze_barcode(barcode: str):
     if catalog_match:
         name, cal, prot, carbs, fat, sugar, fiber, sod = catalog_match
         score, classification, reasons, _, _ = calculate_health_score(
-            calories=cal, protein=prot, carbs=carbs, fat=fat, sugar=sugar, fiber=fiber, sodium=sod
+            calories=cal, protein=prot, carbs=carbs, fat=fat, sugar=sugar, fiber=fiber, sodium=sod,
+            product_name=name
         )
         alts = get_healthier_alternatives(
             product_name=name,
@@ -816,7 +821,8 @@ def analyze_barcode(barcode: str):
                             ing_text = p.get("ingredients_text") or ""
 
                             score, classification, reasons, _, _ = calculate_health_score(
-                                calories=cal, protein=prot, carbs=carbs, fat=fat, sugar=sugar, fiber=fiber, sodium=sod
+                                calories=cal, protein=prot, carbs=carbs, fat=fat, sugar=sugar, fiber=fiber, sodium=sod,
+                                product_name=name, ingredients=ing_text
                             )
                             alts = get_healthier_alternatives(
                                 product_name=name,
@@ -862,7 +868,8 @@ def compare_foods(request: CompareFoodRequest):
         carbs=request.product_a_carbs,
         fat=request.product_a_fat,
         sugar=request.product_a_sugar or 0.0,
-        sodium=request.product_a_sodium or 0.0
+        sodium=request.product_a_sodium or 0.0,
+        product_name=request.product_a_name
     )
 
     score_b, class_b, _, _, _ = calculate_health_score(
@@ -871,7 +878,8 @@ def compare_foods(request: CompareFoodRequest):
         carbs=request.product_b_carbs,
         fat=request.product_b_fat,
         sugar=request.product_b_sugar or 0.0,
-        sodium=request.product_b_sodium or 0.0
+        sodium=request.product_b_sodium or 0.0,
+        product_name=request.product_b_name
     )
 
     prod_a = ComparedProductData(

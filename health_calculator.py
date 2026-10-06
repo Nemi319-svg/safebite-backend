@@ -8,120 +8,267 @@ def calculate_health_score(
     sugar: float = 0.0,
     fiber: float = 0.0,
     sodium: float = 0.0,
+    product_name: str = "",
+    ingredients: str = "",
     is_diabetic: bool = False
 ) -> Tuple[float, str, List[str], List[str], List[str]]:
     """
-    Computes a transparent health score (0-100) based on nutritional values.
+    Computes a transparent health score (0-100) based on nutritional values,
+    beverage vs solid classification, and ingredient warning indicators.
     Returns:
         (final_score, classification, reasons, benefits, concerns)
     """
-    score = 70.0 # Starting baseline score
+    p_lower = (product_name or "").lower()
+    i_lower = (ingredients or "").lower()
+    full_text = f"{p_lower} {i_lower}"
+
+    sug = sugar or 0.0
+    fib = fiber or 0.0
+    sod = sodium or 0.0
+
     reasons: List[str] = []
     benefits: List[str] = []
     concerns: List[str] = []
 
-    # 1. Calories Evaluation
-    if calories > 500:
-        score -= 20
-        reasons.append("High calorie density (>500 kcal) [-20 pts]")
-        concerns.append("Very high calorie density per serving")
-    elif calories > 300:
-        score -= 10
-        reasons.append("Moderate to high calories (>300 kcal) [-10 pts]")
-        concerns.append("Moderate calorie load")
-    elif 0 <= calories <= 200:
-        score += 5
-        reasons.append("Low calorie profile (<=200 kcal) [+5 pts]")
-        benefits.append("Light and low in calories")
+    # Detection of Carbonated Drinks, Sodas, Colas & Energy Drinks
+    is_carbonated_or_soda = any(k in full_text for k in [
+        "cola", "coke", "pepsi", "thums up", "sprite", "fanta", "limca",
+        "mountain dew", "7up", "mirinda", "soda", "carbonated", "soft drink",
+        "cold drink", "fizzy", "appy fizz", "energy drink", "red bull",
+        "monster", "sting"
+    ])
 
-    # 2. Total Fat Evaluation
-    if fat > 20:
-        score -= 20
-        reasons.append("High total fat content (>20g) [-20 pts]")
-        concerns.append("Elevated total fat content")
-    elif fat > 15:
-        score -= 10
-        reasons.append("Moderate fat content (>15g) [-10 pts]")
-        concerns.append("Moderate fat levels")
-    elif 0 <= fat <= 10:
-        score += 5
-        reasons.append("Low fat formulation (<=10g) [+5 pts]")
-        benefits.append("Low in fat")
+    # Detection of General Beverages (Juices, Packaged Drinks, Syrups)
+    is_general_beverage = is_carbonated_or_soda or any(k in full_text for k in [
+        "juice", "drink", "beverage", "sharbat", "squash", "nectar",
+        "syrup", "frooti", "maaza", "slice"
+    ]) or (fat <= 0.5 and protein <= 0.5 and fib <= 0.5 and (carbs > 5.0 or sug > 0.0) and 10.0 <= calories <= 80.0)
 
-    # 3. Protein Evaluation
-    if protein >= 10:
-        score += 10
-        reasons.append("Rich in protein (>=10g) [+10 pts]")
-        benefits.append("Excellent source of dietary protein for muscle repair")
-    elif protein >= 5:
-        score += 5
-        reasons.append("Adequate protein source (>=5g) [+5 pts]")
-        benefits.append("Good source of protein")
+    # =========================================================================
+    # CASE A: CARBONATED SODAS, COLAS & ENERGY DRINKS (Coca-Cola, Pepsi, etc.)
+    # =========================================================================
+    if is_carbonated_or_soda:
+        is_zero_or_diet = (sug <= 0.5 and carbs <= 0.5 and calories <= 5.0)
+        is_pure_club_soda_or_water = (calories == 0.0 and sug == 0.0 and carbs == 0.0 and "sweetener" not in full_text)
 
-    # 4. Carbohydrates Evaluation
-    if carbs > 60:
-        score -= 15
-        reasons.append("High carbohydrate content (>60g) [-15 pts]")
-        concerns.append("High carbohydrate load")
-    elif carbs > 40:
-        score -= 8
-        reasons.append("Moderate carbohydrate content (>40g) [-8 pts]")
+        if is_pure_club_soda_or_water:
+            score = 96.0
+            classification = "Healthy"
+            reasons.append("Calorie-free pure hydration (+96 pts)")
+            benefits.append("100% calorie-free and sugar-free pure hydration")
+            benefits.append("Zero artificial sweeteners, zero synthetic preservatives")
+        elif is_zero_or_diet:
+            score = 42.0
+            classification = "Moderate"
+            reasons.append("Zero-sugar formulation avoids glucose spike (+42 pts)")
+            reasons.append("Contains synthetic artificial sweeteners")
+            benefits.append("Zero calories and zero sugar — avoids immediate blood glucose spikes")
+            concerns.append("Contains synthetic high-potency artificial sweeteners (Aspartame / Acesulfame-K / Sucralose)")
+            concerns.append("Artificial sweeteners can alter gut microbiota and sustain intense sweet cravings")
+            if "338" in full_text or "phosphoric" in full_text:
+                concerns.append("Contains Phosphoric Acid (INS 338) which can weaken tooth enamel and bone calcium")
+            if "150d" in full_text or "caramel" in full_text:
+                concerns.append("Contains Caramel IV (INS 150d) coloring with 4-MEI contaminant concerns")
+        else:
+            # SUGARY SODA / COLD DRINK (Coca-Cola Original, Thums Up, Sprite, Fanta, Sting, etc.)
+            # Standard 300ml bottle/can has ~32g of sugar (8 teaspoons)!
+            calc_score = 22.0 - (sug - 6.0) * 1.5
+            score = max(12.0, min(26.0, calc_score))
+            classification = "Unhealthy"
 
-    # 5. Sugar Evaluation
-    if sugar > 20:
-        score -= 20
-        reasons.append("High added sugars (>20g) [-20 pts]")
-        concerns.append("Excessive sugar content")
-    elif sugar > 10:
-        score -= 10
-        reasons.append("Elevated sugar (>10g) [-10 pts]")
-        concerns.append("Contains noticeable sugar")
-    elif sugar > 0 and sugar <= 3:
-        score += 5
-        reasons.append("Minimal sugar (<=3g) [+5 pts]")
-        benefits.append("Very low in sugar")
+            reasons.append(f"Excessive liquid sugar ({sug:.1f}g/100ml) [-50 pts]")
+            reasons.append("Zero nutritional value / empty calories [-25 pts]")
+            concerns.append(f"Extremely high liquid sugar ({sug:.1f}g / 100ml) — A standard 300ml can contains ~32g (8 teaspoons) of sugar")
+            concerns.append("100% empty calories — Provides zero dietary fiber, zero protein, and zero essential vitamins")
+            concerns.append("Rapid liquid sugar absorption triggers sharp insulin surges, driving fatty liver and visceral weight gain")
 
-    # 6. Fiber Evaluation
-    if fiber >= 5:
-        score += 8
-        reasons.append("High dietary fiber (>=5g) [+8 pts]")
-        benefits.append("Rich in digestive fiber")
-    elif fiber >= 2:
-        score += 4
-        reasons.append("Contains dietary fiber (>=2g) [+4 pts]")
-        benefits.append("Provides dietary fiber")
+            if "338" in full_text or "phosphoric" in full_text or any(k in p_lower for k in ["coca", "pepsi", "thums"]):
+                concerns.append("Contains Phosphoric Acid (INS 338) linked to tooth enamel demineralization and bone calcium loss")
+            if "150d" in full_text or "caramel" in full_text or any(k in p_lower for k in ["coca", "pepsi", "thums"]):
+                concerns.append("Contains Caramel IV (INS 150d) chemical coloring containing trace 4-MEI")
+            if "caffeine" in full_text or any(k in p_lower for k in ["coca", "pepsi", "thums", "sting", "red bull"]):
+                concerns.append("Contains added caffeine paired with high sugar")
+            if "110" in full_text or "sunset yellow" in full_text or any(k in p_lower for k in ["fanta", "mirinda"]):
+                concerns.append("Contains Sunset Yellow FCF (INS 110) petroleum dye")
 
-    # 7. Sodium Evaluation (mg)
-    if sodium > 500:
-        score -= 15
-        reasons.append("Very high sodium (>500mg) [-15 pts]")
-        concerns.append("High sodium level, may affect blood pressure")
-    elif sodium > 250:
-        score -= 8
-        reasons.append("Moderate sodium (>250mg) [-8 pts]")
+    # =========================================================================
+    # CASE B: PACKAGED FRUIT DRINKS & JUICES (Frooti, Maaza, Slice, etc.)
+    # =========================================================================
+    elif is_general_beverage:
+        if sug > 10.0:
+            calc_score = 32.0 - (sug - 10.0) * 1.5
+            score = max(16.0, min(32.0, calc_score))
+            classification = "Unhealthy"
+            reasons.append(f"High liquid sugar ({sug:.1f}g/100ml) with stripped fiber [-40 pts]")
+            concerns.append(f"High added liquid sugar ({sug:.1f}g / 100ml) with stripped natural dietary fiber")
+            concerns.append("Delivers concentrated fructose that directly stresses hepatic (liver) metabolism")
+        elif sug > 5.0:
+            score = 50.0
+            classification = "Moderate"
+            reasons.append("Moderate liquid sugar with low natural fiber")
+            concerns.append("Moderate sugar content in liquid form")
+        else:
+            score = 88.0
+            classification = "Healthy"
+            reasons.append("Low-sugar natural hydration (+88 pts)")
+            benefits.append("Naturally low sugar hydration")
 
-    # 8. Diabetic Penalty Adjustment
-    if is_diabetic:
-        if carbs > 50:
-            score -= 15
-            reasons.append("Diabetic sensitivity: Carbs exceed 50g [-15 pts]")
-            concerns.append("May cause notable blood glucose elevation")
-        if sugar > 8:
-            score -= 12
-            reasons.append("Diabetic sensitivity: Sugar exceeds 8g [-12 pts]")
-            concerns.append("High glycemic impact for diabetics")
-
-    # Clamp final score between 0 and 100
-    final_score = max(0.0, min(100.0, score))
-
-    # Classification
-    if final_score >= 70:
-        classification = "Healthy"
-    elif final_score >= 40:
-        classification = "Moderate"
+    # =========================================================================
+    # CASE C: SOLID FOODS & GENERAL SNACKS
+    # =========================================================================
     else:
-        classification = "Unhealthy"
+        solid_score = 55.0 # Realistic neutral baseline
 
+        # Positive factors (Protein & Fiber)
+        if protein >= 15.0:
+            solid_score += 16.0
+            reasons.append("High protein (>=15g) [+16 pts]")
+            benefits.append("High protein content (>=15g) — supports muscle synthesis & satiety")
+        elif protein >= 8.0:
+            solid_score += 10.0
+            reasons.append("Good protein (>=8g) [+10 pts]")
+            benefits.append("Good source of dietary protein (>=8g)")
+        elif protein >= 4.0:
+            solid_score += 5.0
+            reasons.append("Adequate protein (>=4g) [+5 pts]")
+            benefits.append("Source of protein (>=4g)")
+
+        if fib >= 6.0:
+            solid_score += 16.0
+            reasons.append("High fiber (>=6g) [+16 pts]")
+            benefits.append("High dietary fiber (>=6g) — slows digestion & promotes gut health")
+        elif fib >= 3.0:
+            solid_score += 10.0
+            reasons.append("Good fiber (>=3g) [+10 pts]")
+            benefits.append("Good source of dietary fiber (>=3g)")
+        elif fib >= 1.5:
+            solid_score += 5.0
+            reasons.append("Contains fiber (>=1.5g) [+5 pts]")
+            benefits.append("Contains dietary fiber (>=1.5g)")
+
+        if fib >= 3.0 and protein >= 6.0 and sug <= 5.0 and fat <= 8.0:
+            solid_score += 8.0
+            reasons.append("Balanced whole food profile [+8 pts]")
+            benefits.append("Balanced whole food nutritional profile")
+
+        if 0.1 <= sod <= 140.0 and calories > 50.0:
+            solid_score += 4.0
+            reasons.append("Naturally low sodium [+4 pts]")
+            benefits.append("Naturally low in sodium (<=140mg)")
+
+        # Negative factors (Sugar, Fat, Calories, Sodium, Palm Oil)
+        if sug > 35.0:
+            solid_score -= 32.0
+            reasons.append("Extremely high sugar (>35g) [-32 pts]")
+            concerns.append("Very high added sugar (>35g) — acute glycemic spike")
+        elif sug > 20.0:
+            solid_score -= 22.0
+            reasons.append("High sugar (>20g) [-22 pts]")
+            concerns.append("High sugar content (>20g) — risk of insulin spikes")
+        elif sug > 12.0:
+            solid_score -= 14.0
+            reasons.append("Elevated sugar (>12g) [-14 pts]")
+            concerns.append("Elevated sugar content (>12g)")
+        elif sug > 6.0:
+            solid_score -= 7.0
+            reasons.append("Contains added sugar (>6g) [-7 pts]")
+            concerns.append("Contains added sugar (>6g)")
+
+        if calories > 500.0:
+            solid_score -= 18.0
+            reasons.append("Very high calorie density (>500 kcal) [-18 pts]")
+            concerns.append("Very high calorie density (>500 kcal per 100g)")
+        elif calories > 400.0:
+            solid_score -= 12.0
+            reasons.append("High calories (>400 kcal) [-12 pts]")
+            concerns.append("High calorie load (>400 kcal)")
+        elif calories > 300.0:
+            solid_score -= 6.0
+            reasons.append("Moderate-high calories (>300 kcal) [-6 pts]")
+            concerns.append("Moderate to high calories (>300 kcal)")
+
+        if fat > 30.0:
+            solid_score -= 22.0
+            reasons.append("Very high fat (>30g) [-22 pts]")
+            concerns.append("Very high total fat content (>30g per 100g)")
+        elif fat > 20.0:
+            solid_score -= 15.0
+            reasons.append("High fat (>20g) [-15 pts]")
+            concerns.append("High fat formulation (>20g)")
+        elif fat > 12.0:
+            solid_score -= 8.0
+            reasons.append("Moderate fat (>12g) [-8 pts]")
+            concerns.append("Moderate to high fat content (>12g)")
+
+        if sod > 800.0:
+            solid_score -= 22.0
+            reasons.append("Very high sodium (>800mg) [-22 pts]")
+            concerns.append("Very high sodium (>800mg) — exceeds blood pressure thresholds")
+        elif sod > 500.0:
+            solid_score -= 15.0
+            reasons.append("High sodium (>500mg) [-15 pts]")
+            concerns.append("High sodium level (>500mg)")
+        elif sod > 250.0:
+            solid_score -= 8.0
+            reasons.append("Moderate sodium (>250mg) [-8 pts]")
+            concerns.append("Moderate sodium content (>250mg)")
+
+        # Palm oil & Trans-fat penalty
+        if any(k in full_text for k in ["palm oil", "palmolein", "vanaspati", "hydrogenated"]):
+            solid_score -= 12.0
+            reasons.append("Contains Palm Oil / Hydrogenated Fats [-12 pts]")
+            concerns.append("Contains Palm Oil / Hydrogenated Fats high in atherogenic saturated and trans-fatty acids")
+
+        # Empty calorie junk penalty
+        if (sug > 15.0 or fat > 18.0) and protein < 2.0 and fib < 1.0:
+            solid_score -= 10.0
+            reasons.append("Empty calorie ultra-processed junk [-10 pts]")
+            concerns.append("Empty calories — high in sugars/fats with negligible protein or fiber")
+
+        score = max(8.0, min(96.0, solid_score))
+
+        # Guardrails: A food CANNOT be called Healthy if high in sugar, sodium, or palm oil
+        is_unhealthy_override = (
+            (sug > 25.0) or
+            (fat > 25.0 and sod > 600.0) or
+            (calories > 450.0 and sug > 20.0) or
+            (score < 42.0)
+        )
+
+        is_healthy_eligible = (
+            (score >= 68.0) and
+            (sug <= 8.0) and
+            (fat <= 18.0) and
+            (sod <= 450.0) and
+            ("palm oil" not in full_text) and
+            ("palmolein" not in full_text)
+        )
+
+        if is_unhealthy_override:
+            classification = "Unhealthy"
+        elif is_healthy_eligible:
+            classification = "Healthy"
+        else:
+            classification = "Moderate"
+
+    # Diabetic Adjustment
+    if is_diabetic:
+        if is_carbonated_or_soda or is_general_beverage:
+            if sug > 2.0:
+                score = max(5.0, score - 15.0)
+                reasons.append("Diabetic sensitivity: Liquid sugars rapidly spike blood glucose [-15 pts]")
+                concerns.append("Extremely high glycemic impact for diabetics")
+        else:
+            if carbs > 50:
+                score = max(5.0, score - 15.0)
+                reasons.append("Diabetic sensitivity: Carbs exceed 50g [-15 pts]")
+                concerns.append("May cause notable blood glucose elevation")
+            if sug > 8:
+                score = max(5.0, score - 12.0)
+                reasons.append("Diabetic sensitivity: Sugar exceeds 8g [-12 pts]")
+                concerns.append("High glycemic impact for diabetics")
+
+    final_score = round(max(5.0, min(98.0, score)), 1)
     return final_score, classification, reasons, benefits, concerns
 
 
