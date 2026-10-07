@@ -30,26 +30,26 @@ def calculate_health_score(
     benefits: List[str] = []
     concerns: List[str] = []
 
-    # Detection of Carbonated Drinks, Sodas, Colas & Energy Drinks
-    is_carbonated_or_soda = any(k in full_text for k in [
+    # Detection of Beverages (Juices, Packaged Drinks, Sodas, Colas, Syrups)
+    is_beverage_by_profile = (fat <= 0.8 and protein <= 0.8 and fib <= 0.8 and (carbs > 4.0 or sug > 4.0) and 10.0 <= calories <= 95.0)
+    is_beverage_by_text = any(k in full_text for k in [
         "cola", "coke", "pepsi", "thums up", "sprite", "fanta", "limca",
         "mountain dew", "7up", "mirinda", "soda", "carbonated", "soft drink",
         "cold drink", "fizzy", "appy fizz", "energy drink", "red bull",
-        "monster", "sting"
+        "monster", "sting", "juice", "drink", "beverage", "sharbat", "squash",
+        "nectar", "syrup", "frooti", "maaza", "slice"
     ])
+    is_liquid_beverage = is_beverage_by_profile or is_beverage_by_text
 
-    # Detection of General Beverages (Juices, Packaged Drinks, Syrups)
-    is_general_beverage = is_carbonated_or_soda or any(k in full_text for k in [
-        "juice", "drink", "beverage", "sharbat", "squash", "nectar",
-        "syrup", "frooti", "maaza", "slice"
-    ]) or (fat <= 0.5 and protein <= 0.5 and fib <= 0.5 and (carbs > 5.0 or sug > 0.0) and 10.0 <= calories <= 80.0)
+    # In liquid beverages, 100% of carbohydrates are simple dissolved sugars
+    effective_beverage_sugar = max(sug, carbs) if is_liquid_beverage else sug
 
     # =========================================================================
-    # CASE A: CARBONATED SODAS, COLAS & ENERGY DRINKS (Coca-Cola, Pepsi, etc.)
+    # CASE A: LIQUID BEVERAGES (COLD DRINKS, COLAS, SODAS, JUICES & ENERGY DRINKS)
     # =========================================================================
-    if is_carbonated_or_soda:
-        is_zero_or_diet = (sug <= 0.5 and carbs <= 0.5 and calories <= 5.0)
-        is_pure_club_soda_or_water = (calories == 0.0 and sug == 0.0 and carbs == 0.0 and "sweetener" not in full_text)
+    if is_liquid_beverage:
+        is_zero_or_diet = (effective_beverage_sugar <= 0.5 and calories <= 5.0 and any(k in full_text for k in ["sweetener", "diet", "zero", "black", "light", "aspartame", "sucralose"]))
+        is_pure_club_soda_or_water = (calories == 0.0 and effective_beverage_sugar == 0.0 and carbs == 0.0 and "sweetener" not in full_text)
 
         if is_pure_club_soda_or_water:
             score = 96.0
@@ -69,52 +69,41 @@ def calculate_health_score(
                 concerns.append("Contains Phosphoric Acid (INS 338) which can weaken tooth enamel and bone calcium")
             if "150d" in full_text or "caramel" in full_text:
                 concerns.append("Contains Caramel IV (INS 150d) coloring with 4-MEI contaminant concerns")
-        else:
-            # SUGARY SODA / COLD DRINK (Coca-Cola Original, Thums Up, Sprite, Fanta, Sting, etc.)
-            # Standard 300ml bottle/can has ~32g of sugar (8 teaspoons)!
-            calc_score = 22.0 - (sug - 6.0) * 1.5
+        elif effective_beverage_sugar > 6.0:
+            # SUGARY BEVERAGE / SODA / COLD DRINK / PACKAGED JUICE
+            # Standard 300ml bottle/can has ~30-40g of sugar (7-10 teaspoons)!
+            calc_score = 22.0 - (effective_beverage_sugar - 6.0) * 1.5
             score = max(12.0, min(26.0, calc_score))
             classification = "Unhealthy"
 
-            reasons.append(f"Excessive liquid sugar ({sug:.1f}g/100ml) [-50 pts]")
+            reasons.append(f"Excessive liquid sugar ({effective_beverage_sugar:.1f}g/100ml) [-50 pts]")
             reasons.append("Zero nutritional value / empty calories [-25 pts]")
-            concerns.append(f"Extremely high liquid sugar ({sug:.1f}g / 100ml) — A standard 300ml can contains ~32g (8 teaspoons) of sugar")
+            concerns.append(f"Extremely high liquid sugar ({effective_beverage_sugar:.1f}g / 100ml) — A standard 300ml can contains ~{effective_beverage_sugar * 3.0:.0f}g ({(effective_beverage_sugar * 3.0) / 4.0:.0f} teaspoons) of sugar")
             concerns.append("100% empty calories — Provides zero dietary fiber, zero protein, and zero essential vitamins")
             concerns.append("Rapid liquid sugar absorption triggers sharp insulin surges, driving fatty liver and visceral weight gain")
 
-            if "338" in full_text or "phosphoric" in full_text or any(k in p_lower for k in ["coca", "pepsi", "thums"]):
+            if "338" in full_text or "phosphoric" in full_text or any(k in full_text for k in ["coca", "pepsi", "thums"]):
                 concerns.append("Contains Phosphoric Acid (INS 338) linked to tooth enamel demineralization and bone calcium loss")
-            if "150d" in full_text or "caramel" in full_text or any(k in p_lower for k in ["coca", "pepsi", "thums"]):
+            if "150d" in full_text or "caramel" in full_text or any(k in full_text for k in ["coca", "pepsi", "thums"]):
                 concerns.append("Contains Caramel IV (INS 150d) chemical coloring containing trace 4-MEI")
-            if "caffeine" in full_text or any(k in p_lower for k in ["coca", "pepsi", "thums", "sting", "red bull"]):
+            if "caffeine" in full_text or any(k in full_text for k in ["coca", "pepsi", "thums", "sting", "red bull"]):
                 concerns.append("Contains added caffeine paired with high sugar")
-            if "110" in full_text or "sunset yellow" in full_text or any(k in p_lower for k in ["fanta", "mirinda"]):
+            if "110" in full_text or "sunset yellow" in full_text or any(k in full_text for k in ["fanta", "mirinda"]):
                 concerns.append("Contains Sunset Yellow FCF (INS 110) petroleum dye")
-
-    # =========================================================================
-    # CASE B: PACKAGED FRUIT DRINKS & JUICES (Frooti, Maaza, Slice, etc.)
-    # =========================================================================
-    elif is_general_beverage:
-        if sug > 10.0:
-            calc_score = 32.0 - (sug - 10.0) * 1.5
-            score = max(16.0, min(32.0, calc_score))
-            classification = "Unhealthy"
-            reasons.append(f"High liquid sugar ({sug:.1f}g/100ml) with stripped fiber [-40 pts]")
-            concerns.append(f"High added liquid sugar ({sug:.1f}g / 100ml) with stripped natural dietary fiber")
-            concerns.append("Delivers concentrated fructose that directly stresses hepatic (liver) metabolism")
-        elif sug > 5.0:
-            score = 50.0
+        elif effective_beverage_sugar > 2.5:
+            calc_score = 50.0 - (effective_beverage_sugar - 2.5) * 6.0
+            score = max(30.0, min(50.0, calc_score))
             classification = "Moderate"
-            reasons.append("Moderate liquid sugar with low natural fiber")
-            concerns.append("Moderate sugar content in liquid form")
+            reasons.append(f"Contains noticeable liquid sugar ({effective_beverage_sugar:.1f}g/100ml)")
+            concerns.append(f"Contains noticeable liquid sugar ({effective_beverage_sugar:.1f}g / 100ml)")
         else:
             score = 88.0
             classification = "Healthy"
-            reasons.append("Low-sugar natural hydration (+88 pts)")
-            benefits.append("Naturally low sugar hydration")
+            reasons.append(f"Naturally low sugar hydration ({effective_beverage_sugar:.1f}g/100ml) [+88 pts]")
+            benefits.append(f"Naturally low sugar hydration ({effective_beverage_sugar:.1f}g / 100ml)")
 
     # =========================================================================
-    # CASE C: SOLID FOODS & GENERAL SNACKS
+    # CASE B: SOLID FOODS & GENERAL SNACKS
     # =========================================================================
     else:
         solid_score = 55.0 # Realistic neutral baseline
