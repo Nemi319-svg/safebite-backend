@@ -26,7 +26,7 @@ def get_db():
         db.close()
 
 def init_db():
-    """Creates database tables if they do not exist."""
+    """Creates database tables if they do not exist and safely migrates schema columns."""
     Base.metadata.create_all(bind=engine)
     try:
         with engine.connect() as conn:
@@ -38,6 +38,19 @@ def init_db():
                     conn.execute(text("ALTER TABLE users ADD COLUMN email VARCHAR(150)"))
                 if "is_verified" not in cols:
                     conn.execute(text("ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT 1"))
+                if "email_verified" not in cols:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT 0"))
+                if "verification_code_hash" not in cols:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN verification_code_hash VARCHAR(255)"))
+                if "verification_expires_at" not in cols:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN verification_expires_at DATETIME"))
+                if "verification_last_sent_at" not in cols:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN verification_last_sent_at DATETIME"))
+                if "failed_verification_attempts" not in cols:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN failed_verification_attempts INTEGER DEFAULT 0"))
+
+                # Backward compatibility: preserve verified status for existing accounts
+                conn.execute(text("UPDATE users SET email_verified = 1 WHERE is_verified = 1 AND (email_verified IS NULL OR email_verified = 0)"))
                 conn.commit()
     except Exception as e:
         print(f"Database migration note: {e}")

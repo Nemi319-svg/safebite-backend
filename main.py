@@ -3,6 +3,7 @@ import re
 import secrets
 import time
 import datetime
+import hashlib
 import logging
 from typing import Optional, List, Dict
 from dotenv import load_dotenv
@@ -16,6 +17,7 @@ from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, Que
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from database import engine, get_db, init_db
@@ -24,7 +26,9 @@ from models import (
     User, Scan, SavedFood,
     RegisterRequest, LoginRequest, GoogleAuthRequest, AuthResponse,
     SendVerificationRequest, SendVerificationResponse,
+    ResendVerificationRequest, ResendVerificationResponse,
     VerifyCodeRequest, VerifyCodeResponse,
+    VerifyEmailRequest, VerifyEmailResponse,
     UserProfileRequest, UserProfileResponse,
     ManualAnalysisRequest, AnalysisResponse, NutritionData,
     BarcodeResponse, IndianFoodSearchResponse,
@@ -44,6 +48,12 @@ from gemini_service import (
     set_gemini_api_key
 )
 from ocr_fallback import run_ocr_fallback
+from email_service import (
+    send_verification_email,
+    is_smtp_configured,
+    VERIFICATION_CODE_EXPIRE_MINUTES,
+    VERIFICATION_RESEND_COOLDOWN_SECONDS
+)
 
 # Initialize Logger
 logging.basicConfig(level=logging.INFO)
@@ -60,17 +70,27 @@ def seed_default_user():
         if not user:
             new_u = models.User(
                 username="demo_user",
+                email="demo@safebite.app",
                 hashed_password=bcrypt.hashpw("password123".encode("utf-8"), bcrypt.gensalt()).decode("utf-8"),
                 role="user",
                 age=25,
                 height=170.0,
                 weight=65.0,
                 gender="Other",
-                is_diabetic=False
+                is_diabetic=False,
+                is_verified=True,
+                email_verified=True
             )
             db.add(new_u)
             db.commit()
             logger.info("Default user 'demo_user' seeded successfully in SQLite database.")
+        else:
+            if not user.is_verified or not user.email_verified:
+                user.is_verified = True
+                user.email_verified = True
+                if not user.email:
+                    user.email = "demo@safebite.app"
+                db.commit()
     except Exception as e:
         logger.warning(f"Could not seed default user: {e}")
     finally:
@@ -127,6 +147,16 @@ def validate_password_strength(password: str) -> Optional[str]:
 def is_valid_email_format(email: str) -> bool:
     email_regex = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
     return bool(re.match(email_regex, email.strip()))
+
+def hash_verification_code(code: str) -> str:
+    secret = os.getenv("SECRET_KEY", "safebite_verification_secret_salt")
+    return hashlib.sha256(f"{code.strip()}:{secret}".encode("utf-8")).hexdigest()
+
+def verify_code_hash(plain_code: str, stored_hash: Optional[str]) -> bool:
+    if not stored_hash:
+        return False
+    computed = hash_verification_code(plain_code)
+    return secrets.compare_digest(computed, stored_hash)
 
 
 # Helper: Calculate BMI
@@ -203,101 +233,256 @@ def health_check():
 # User Authentication & Profile
 # ============================================================================
 
-@app.post("/auth/send-verification", response_model=SendVerificationResponse, tags=["Auth"])
-def send_verification_code(request: SendVerificationRequest):
-    email = request.email.strip().lower()
-    if not is_valid_email_format(email):
+# ============================================================================
+# User Authentication & Profile
+# ============================================================================
+
+def _handle_resend_verification(email: str, db: Session) -> ResendVerificationResponse:
+    clean_email = email.strip().lower()
+    if not is_valid_email_format(clean_email):
         raise HTTPException(status_code=400, detail="Please enter a valid email address.")
 
-    # Generate cryptographically secure 6-digit verification code
-    code = "".join([secrets.choice("0123456789") for _ in range(6)])
-    expires_at = time.time() + 600 # 10 minutes
-    verification_codes[email] = {
-        "code": code,
-        "expires_at": expires_at
-    }
-    logger.info(f"Verification code generated for {email}: {code}")
+    user = db.query(User).filter(
+        or_(User.email == clean_email, User.username == clean_email)
+    ).first()
 
-    return SendVerificationResponse(
+    generic_msg = "If this email address is associated with a pending account, a verification code has been dispatched."
+
+    if not user:
+        return ResendVerificationResponse(status="success", message=generic_msg)
+
+    if user.email_verified and user.is_verified:
+        return ResendVerificationResponse(status="success", message="Email is already verified. You can log in directly.")
+
+    now = datetime.datetime.utcnow()
+    if user.verification_last_sent_at:
+        seconds_passed = (now - user.verification_last_sent_at).total_seconds()
+        if seconds_passed < VERIFICATION_RESEND_COOLDOWN_SECONDS:
+            remaining = int(VERIFICATION_RESEND_COOLDOWN_SECONDS - seconds_passed)
+            raise HTTPException(
+                status_code=429,
+                detail=f"Please wait {remaining} seconds before requesting a new verification code."
+            )
+
+    # Generate cryptographically secure 6-digit code
+    code = "".join([secrets.choice("0123456789") for _ in range(6)])
+    user.verification_code_hash = hash_verification_code(code)
+    user.verification_expires_at = now + datetime.timedelta(minutes=VERIFICATION_CODE_EXPIRE_MINUTES)
+    user.verification_last_sent_at = now
+    user.failed_verification_attempts = 0
+    db.commit()
+
+    verification_codes[clean_email] = {
+        "code": code,
+        "expires_at": time.time() + (VERIFICATION_CODE_EXPIRE_MINUTES * 60)
+    }
+
+    send_verification_email(to_email=clean_email, verification_code=code, username=user.username)
+    logger.info(f"Verification code regenerated for {clean_email}")
+
+    return ResendVerificationResponse(
         status="success",
-        message=f"A 6-digit verification code has been dispatched to {email}.",
-        demo_code=code
+        message="A new verification code has been sent to your email."
     )
 
-@app.post("/auth/verify-code", response_model=VerifyCodeResponse, tags=["Auth"])
-def verify_code(request: VerifyCodeRequest):
-    email = request.email.strip().lower()
-    code = request.code.strip()
+def _handle_verify_email(email: str, code: str, db: Session) -> VerifyEmailResponse:
+    clean_email = email.strip().lower()
+    clean_code = code.strip()
 
-    stored = verification_codes.get(email)
-    if not stored:
-        # Graceful test fallback code: 123456
-        if code == "123456":
-            return VerifyCodeResponse(status="success", message="Code verified successfully.", is_valid=True)
-        return VerifyCodeResponse(status="error", message="No active verification code found for this email. Please request a new code.", is_valid=False)
+    if not is_valid_email_format(clean_email):
+        raise HTTPException(status_code=400, detail="Invalid email address.")
+    if len(clean_code) != 6 or not clean_code.isdigit():
+        raise HTTPException(status_code=400, detail="Verification code must be 6 digits.")
 
-    if time.time() > stored["expires_at"]:
-        verification_codes.pop(email, None)
-        return VerifyCodeResponse(status="error", message="Verification code has expired. Please request a new code.", is_valid=False)
+    user = db.query(User).filter(
+        or_(User.email == clean_email, User.username == clean_email)
+    ).first()
 
-    if stored["code"] != code and code != "123456":
-        return VerifyCodeResponse(status="error", message="Incorrect verification code. Please check and try again.", is_valid=False)
+    if not user:
+        raise HTTPException(status_code=404, detail="No account found for this email address.")
 
-    return VerifyCodeResponse(status="success", message="Email verified successfully.", is_valid=True)
+    if user.email_verified and user.is_verified:
+        return VerifyEmailResponse(
+            status="success",
+            message="Email is already verified. You can log in.",
+            is_valid=True,
+            username=user.username
+        )
+
+    # Check attempt rate limit
+    if (user.failed_verification_attempts or 0) >= 5:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many failed verification attempts. Please request a new verification code."
+        )
+
+    # Check expiry
+    now = datetime.datetime.utcnow()
+    if user.verification_expires_at and now > user.verification_expires_at:
+        raise HTTPException(
+            status_code=400,
+            detail="Verification code has expired. Please request a new code."
+        )
+
+    # Verify cryptographic hash
+    is_valid = verify_code_hash(clean_code, user.verification_code_hash)
+    if not is_valid:
+        user.failed_verification_attempts = (user.failed_verification_attempts or 0) + 1
+        db.commit()
+        remaining = max(0, 5 - user.failed_verification_attempts)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Incorrect verification code. {remaining} attempt(s) remaining."
+        )
+
+    # Mark as verified and invalidate code
+    user.is_verified = True
+    user.email_verified = True
+    user.verification_code_hash = None
+    user.verification_expires_at = None
+    user.failed_verification_attempts = 0
+    db.commit()
+    db.refresh(user)
+
+    verification_codes.pop(clean_email, None)
+    logger.info(f"User {user.username} ({user.email}) successfully verified email.")
+
+    return VerifyEmailResponse(
+        status="success",
+        message="Email verified successfully! You can now log in.",
+        is_valid=True,
+        username=user.username
+    )
 
 @app.post("/register", response_model=AuthResponse, tags=["Auth"])
 def register(request: RegisterRequest, db: Session = Depends(get_db)):
-    clean_username = request.username.strip()
-    if len(clean_username) < 3:
-        raise HTTPException(status_code=400, detail="Username must be at least 3 characters.")
-    
+    raw_name = (request.username or request.name or "").strip()
+    if len(raw_name) < 3:
+        raise HTTPException(status_code=400, detail="Name/username must be at least 3 characters.")
+
+    clean_email = (request.email or "").strip().lower()
+    if not clean_email or not is_valid_email_format(clean_email):
+        raise HTTPException(status_code=400, detail="A valid email address is required for registration.")
+
     # Password strength policy enforcement
     pass_error = validate_password_strength(request.password)
     if pass_error:
         raise HTTPException(status_code=400, detail=pass_error)
 
-    clean_email = request.email.strip().lower() if request.email else None
-    if clean_email:
-        if not is_valid_email_format(clean_email):
-            raise HTTPException(status_code=400, detail="Invalid email address.")
-        existing_email = db.query(User).filter(User.email == clean_email).first()
-        if existing_email:
-            raise HTTPException(status_code=400, detail="This email is already registered.")
+    # Check existing email
+    existing_user_by_email = db.query(User).filter(User.email == clean_email).first()
+    if existing_user_by_email:
+        if existing_user_by_email.email_verified and existing_user_by_email.is_verified:
+            raise HTTPException(status_code=400, detail="This email is already registered. Please log in.")
+        # If user registered earlier but did not complete verification, update credentials and resend code
+        user = existing_user_by_email
+        user.username = raw_name
+        user.hashed_password = hash_password(request.password)
+    else:
+        # Check if username is taken by a different user
+        existing_username = db.query(User).filter(User.username == raw_name).first()
+        if existing_username:
+            raise HTTPException(status_code=400, detail="Username is already taken. Please choose another username.")
 
-    existing_user = db.query(User).filter(User.username == clean_username).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Username is already registered.")
+        user = User(
+            username=raw_name,
+            email=clean_email,
+            is_verified=False,
+            email_verified=False,
+            hashed_password=hash_password(request.password),
+            role="user"
+        )
+        db.add(user)
 
-    new_user = User(
-        username=clean_username,
-        email=clean_email,
-        is_verified=True,
-        hashed_password=hash_password(request.password),
-        role="user"
-    )
-    db.add(new_user)
+    # Generate cryptographically secure 6-digit verification code
+    code = "".join([secrets.choice("0123456789") for _ in range(6)])
+    now = datetime.datetime.utcnow()
+    user.verification_code_hash = hash_verification_code(code)
+    user.verification_expires_at = now + datetime.timedelta(minutes=VERIFICATION_CODE_EXPIRE_MINUTES)
+    user.verification_last_sent_at = now
+    user.failed_verification_attempts = 0
     db.commit()
-    db.refresh(new_user)
+    db.refresh(user)
+
+    verification_codes[clean_email] = {
+        "code": code,
+        "expires_at": time.time() + (VERIFICATION_CODE_EXPIRE_MINUTES * 60)
+    }
+
+    # Dispatch email
+    send_verification_email(to_email=clean_email, verification_code=code, username=user.username)
+    logger.info(f"Verification code sent to {clean_email} for registration.")
 
     return AuthResponse(
         status="success",
-        message="Registration successful. Welcome to SafeBite!",
-        username=new_user.username,
-        role=new_user.role
+        message="Registration successful! We sent a 6-digit verification code to your email address.",
+        username=user.username,
+        email=user.email,
+        role=user.role,
+        verification_required=True,
+        is_verified=False
+    )
+
+@app.post("/verify-email", response_model=VerifyEmailResponse, tags=["Auth"])
+def verify_email_endpoint(request: VerifyEmailRequest, db: Session = Depends(get_db)):
+    return _handle_verify_email(request.email, request.code, db)
+
+@app.post("/auth/verify-code", response_model=VerifyCodeResponse, tags=["Auth"])
+def verify_code_endpoint(request: VerifyCodeRequest, db: Session = Depends(get_db)):
+    resp = _handle_verify_email(request.email, request.code, db)
+    return VerifyCodeResponse(
+        status=resp.status,
+        message=resp.message,
+        is_valid=resp.is_valid,
+        username=resp.username
+    )
+
+@app.post("/resend-verification", response_model=ResendVerificationResponse, tags=["Auth"])
+def resend_verification_endpoint(request: ResendVerificationRequest, db: Session = Depends(get_db)):
+    return _handle_resend_verification(request.email, db)
+
+@app.post("/auth/send-verification", response_model=SendVerificationResponse, tags=["Auth"])
+def send_verification_endpoint(request: SendVerificationRequest, db: Session = Depends(get_db)):
+    resp = _handle_resend_verification(request.email, db)
+    return SendVerificationResponse(
+        status=resp.status,
+        message=resp.message,
+        demo_code=None
     )
 
 @app.post("/login", response_model=AuthResponse, tags=["Auth"])
 def login(request: LoginRequest, db: Session = Depends(get_db)):
-    clean_username = request.username.strip()
-    user = db.query(User).filter(User.username == clean_username).first()
+    identifier = (request.username or request.email or "").strip()
+    if not identifier:
+        raise HTTPException(status_code=400, detail="Username or email is required.")
+
+    user = db.query(User).filter(
+        or_(User.username == identifier, User.email == identifier.lower())
+    ).first()
+
     if not user or not verify_password(request.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid username or password.")
+
+    # Check email verification status
+    if not user.is_verified or not user.email_verified:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "email_not_verified",
+                "message": "Your email address has not been verified yet. Please verify your email before logging in.",
+                "email": user.email,
+                "username": user.username
+            }
+        )
 
     return AuthResponse(
         status="success",
         message="Login successful.",
         username=user.username,
-        role=user.role
+        email=user.email,
+        role=user.role,
+        is_verified=True,
+        verification_required=False
     )
 
 @app.post("/auth/google", response_model=AuthResponse, tags=["Auth"])
@@ -842,7 +1027,8 @@ def analyze_barcode(barcode: str):
                                 classification=classification,
                                 category=classification,
                                 recommendation=rec,
-                                healthier_alternatives=alts
+                                healthier_alternatives=alts,
+                                ingredients=ing_text
                             )
                 except Exception as inner_e:
                     logger.debug(f"OFF endpoint {ep} check error: {inner_e}")

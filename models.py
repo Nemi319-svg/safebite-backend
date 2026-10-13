@@ -24,7 +24,12 @@ class User(Base):
     gender = Column(String(20), nullable=True)
     is_diabetic = Column(Boolean, default=False)
     email = Column(String(150), unique=True, index=True, nullable=True)
-    is_verified = Column(Boolean, default=True)
+    is_verified = Column(Boolean, default=False)
+    email_verified = Column(Boolean, default=False)
+    verification_code_hash = Column(String(255), nullable=True)
+    verification_expires_at = Column(DateTime, nullable=True)
+    verification_last_sent_at = Column(DateTime, nullable=True)
+    failed_verification_attempts = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     scans = relationship("Scan", back_populates="user", cascade="all, delete-orphan")
@@ -86,7 +91,8 @@ class SavedFood(Base):
 # ============================================================================
 
 class RegisterRequest(BaseModel):
-    username: str
+    username: Optional[str] = None
+    name: Optional[str] = None
     password: str
     email: Optional[str] = None
     verification_code: Optional[str] = None
@@ -99,6 +105,13 @@ class SendVerificationResponse(BaseModel):
     message: str
     demo_code: Optional[str] = None
 
+class ResendVerificationRequest(BaseModel):
+    email: str
+
+class ResendVerificationResponse(BaseModel):
+    status: str
+    message: str
+
 class VerifyCodeRequest(BaseModel):
     email: str
     code: str
@@ -106,10 +119,22 @@ class VerifyCodeRequest(BaseModel):
 class VerifyCodeResponse(BaseModel):
     status: str
     message: str
-    is_valid: bool
+    is_valid: bool = True
+    username: Optional[str] = None
+
+class VerifyEmailRequest(BaseModel):
+    email: str
+    code: str
+
+class VerifyEmailResponse(BaseModel):
+    status: str
+    message: str
+    is_valid: bool = True
+    username: Optional[str] = None
 
 class LoginRequest(BaseModel):
-    username: str
+    username: Optional[str] = None
+    email: Optional[str] = None
     password: str
 
 class GoogleAuthRequest(BaseModel):
@@ -123,6 +148,9 @@ class AuthResponse(BaseModel):
     message: str
     username: Optional[str] = None
     role: Optional[str] = "user"
+    email: Optional[str] = None
+    verification_required: Optional[bool] = False
+    is_verified: Optional[bool] = True
 
 class UserProfileRequest(BaseModel):
     username: str
@@ -187,6 +215,7 @@ class BarcodeResponse(BaseModel):
     category: str
     recommendation: str
     healthier_alternatives: List[str] = []
+    ingredients: Optional[str] = None
 
 class IndianFoodItem(BaseModel):
     name: str

@@ -1462,14 +1462,50 @@ INDIAN_FOOD_DATASET: List[Dict[str, Any]] = [
     }
 ]
 
+HINDI_PHONETIC_MAP = {
+    "दाल": ["dal", "lentil"],
+    "daal": ["dal"],
+    "dhal": ["dal"],
+    "पनीर": ["paneer"],
+    "panir": ["paneer"],
+    "रोटी": ["roti", "chapati", "naan", "kulcha"],
+    "fulka": ["roti", "chapati"],
+    "phulka": ["roti", "chapati"],
+    "चावल": ["rice", "biryani", "khichdi"],
+    "briyani": ["biryani"],
+    "समोसा": ["samosa"],
+    "samose": ["samosa"],
+    "इडली": ["idli"],
+    "डोसा": ["dosa"],
+    "dhosa": ["dosa"],
+    "छोले": ["chole", "chana", "bhature"],
+    "chhole": ["chole"],
+    "राजमा": ["rajma"],
+    "चिकन": ["chicken", "murgh"],
+    "लस्सी": ["lassi"],
+    "छाछ": ["buttermilk", "chaas"],
+    "chaas": ["buttermilk"],
+    "पोहा": ["poha"],
+    "ढोकला": ["dhokla"],
+    "जलेबी": ["jalebi"]
+}
+
 def search_indian_food(query: str) -> List[Dict[str, Any]]:
-    """Filters dishes by name, category, or region containing the query string."""
+    """Filters dishes by name, category, or region containing the query string (supports English & Hindi)."""
     q = query.strip().lower()
     if not q:
         return INDIAN_FOOD_DATASET
-    return [
-        dish for dish in INDIAN_FOOD_DATASET
-        if q in dish["name"].lower()
-        or q in (dish.get("category") or "").lower()
-        or q in (dish.get("region") or "").lower()
-    ]
+
+    aliases = [q]
+    if q in HINDI_PHONETIC_MAP:
+        aliases.extend(HINDI_PHONETIC_MAP[q])
+
+    results = []
+    for dish in INDIAN_FOOD_DATASET:
+        name_lower = dish["name"].lower()
+        cat_lower = (dish.get("category") or "").lower()
+        reg_lower = (dish.get("region") or "").lower()
+        if any(a in name_lower or a in cat_lower or a in reg_lower for a in aliases):
+            results.append(dish)
+    return results
+
