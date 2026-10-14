@@ -14,9 +14,9 @@ def get_smtp_config():
         port = int(os.getenv("SMTP_PORT", "587").strip())
     except Exception:
         port = 587
-    user = os.getenv("SMTP_USERNAME", "").strip()
+    user = os.getenv("SMTP_USERNAME", "nemisharma9257@gmail.com").strip()
     # Strip spaces in case user passes Google 16-char App Password formatted as 'xxxx xxxx xxxx xxxx'
-    pw = os.getenv("SMTP_PASSWORD", "").replace(" ", "").strip()
+    pw = os.getenv("SMTP_PASSWORD", "rwjcyucbkauigbzu").replace(" ", "").strip()
     sender = os.getenv("EMAIL_FROM", f"SafeBite <{user}>" if user else "no-reply@safebite.app").strip()
     try:
         expire_min = int(os.getenv("VERIFICATION_CODE_EXPIRE_MINUTES", "10"))
@@ -30,9 +30,9 @@ def get_smtp_config():
 
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "").replace(" ", "")
-EMAIL_FROM = os.getenv("EMAIL_FROM", f"SafeBite <{SMTP_USERNAME}>" if SMTP_USERNAME else "no-reply@safebite.app")
+SMTP_USERNAME = os.getenv("SMTP_USERNAME", "nemisharma9257@gmail.com")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "rwjcyucbkauigbzu").replace(" ", "")
+EMAIL_FROM = os.getenv("EMAIL_FROM", f"SafeBite <{SMTP_USERNAME}>")
 VERIFICATION_CODE_EXPIRE_MINUTES = int(os.getenv("VERIFICATION_CODE_EXPIRE_MINUTES", "10"))
 VERIFICATION_RESEND_COOLDOWN_SECONDS = int(os.getenv("VERIFICATION_RESEND_COOLDOWN_SECONDS", "30"))
 
