@@ -1490,6 +1490,89 @@ HINDI_PHONETIC_MAP = {
     "जलेबी": ["jalebi"]
 }
 
+def get_dish_image_url(name: str, category: str = "") -> str:
+    lower = name.lower()
+    if "chole bhature" in lower or "bhature" in lower or "bhatura" in lower:
+        return "https://images.pexels.com/photos/11818239/pexels-photo-11818239.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "chole" in lower or "chana masala" in lower:
+        return "https://images.pexels.com/photos/8996219/pexels-photo-8996219.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "rajma" in lower:
+        return "https://images.pexels.com/photos/12737912/pexels-photo-12737912.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "dal makhani" in lower:
+        return "https://images.pexels.com/photos/37182513/pexels-photo-37182513/free-photo-of-dal-makhani-with-butter-on-yellow-tablecloth.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "dal tadka" in lower or "yellow dal" in lower or "dal" in lower:
+        return "https://images.pexels.com/photos/33379362/pexels-photo-33379362/free-photo-of-delicious-indian-tadka-dal-with-fresh-ingredients.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "palak paneer" in lower:
+        return "https://images.pexels.com/photos/31249589/pexels-photo-31249589/free-photo-of-delicious-indian-palak-paneer-dish-top-view.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "paneer tikka" in lower:
+        return "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?auto=format&fit=crop&w=600&q=80"
+    if "paneer" in lower:
+        return "https://images.pexels.com/photos/9609838/pexels-photo-9609838.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "dosa" in lower or "uttapam" in lower or "chilla" in lower:
+        return "https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=600&q=80"
+    if "idli" in lower:
+        return "https://images.pexels.com/photos/4331491/pexels-photo-4331491.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "vada" in lower and "vada pav" not in lower:
+        return "https://images.pexels.com/photos/9619560/pexels-photo-9619560.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "sambar" in lower or "rasam" in lower:
+        return "https://images.pexels.com/photos/35041668/pexels-photo-35041668/free-photo-of-south-indian-sambar-in-stainless-steel-saucepan.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "biryani" in lower:
+        return "https://images.pexels.com/photos/9738983/pexels-photo-9738983.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "pulao" in lower or "rice" in lower or "khichdi" in lower or "pongal" in lower:
+        return "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=600&q=80"
+    if "paratha" in lower or "thepla" in lower or "kulcha" in lower:
+        return "https://images.pexels.com/photos/33428723/pexels-photo-33428723.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "roti" in lower or "chapati" in lower or "phulka" in lower:
+        return "https://images.pexels.com/photos/13084520/pexels-photo-13084520.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "naan" in lower:
+        return "https://images.pexels.com/photos/5835339/pexels-photo-5835339.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "butter chicken" in lower or "chicken curry" in lower or "chettinad" in lower:
+        return "https://images.pexels.com/photos/37295815/pexels-photo-37295815/free-photo-of-delicious-butter-chicken-in-creamy-sauce.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "tandoori chicken" in lower:
+        return "https://images.pexels.com/photos/36895285/pexels-photo-36895285/free-photo-of-spicy-tandoori-chicken-with-lime-on-wooden-board.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "fish" in lower or "macher" in lower:
+        return "https://images.pexels.com/photos/13243817/pexels-photo-13243817.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "mutton" in lower or "rogan josh" in lower:
+        return "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80"
+    if "samosa" in lower:
+        return "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=600&q=80"
+    if "pav bhaji" in lower or "misal" in lower:
+        return "https://images.pexels.com/photos/7625089/pexels-photo-7625089.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "vada pav" in lower:
+        return "https://images.pexels.com/photos/34682732/pexels-photo-34682732/free-photo-of-delicious-indian-snack-vada-pav-with-spicy-chili.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "poha" in lower:
+        return "https://images.unsplash.com/photo-1645177628172-a94c1f96e6db?auto=format&fit=crop&w=600&q=80"
+    if "dhokla" in lower or "khandvi" in lower:
+        return "https://images.unsplash.com/photo-1714799263291-272975db795a?auto=format&fit=crop&w=600&q=80"
+    if "momo" in lower:
+        return "https://images.pexels.com/photos/28445593/pexels-photo-28445593/free-photo-of-nepalese-momos-with-spicy-dipping-sauce-on-marble.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "pani puri" in lower or "golgappa" in lower or "chaat" in lower or "bhel" in lower or "sev puri" in lower:
+        return "https://images.pexels.com/photos/13063312/pexels-photo-13063312.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "chai" in lower or "tea" in lower:
+        return "https://images.pexels.com/photos/10377676/pexels-photo-10377676.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "lassi" in lower or "chaas" in lower or "buttermilk" in lower:
+        return "https://images.pexels.com/photos/14509267/pexels-photo-14509267.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "coconut water" in lower:
+        return "https://images.unsplash.com/photo-1525385133512-2f3bdd039054?auto=format&fit=crop&w=600&q=80"
+    if "gulab jamun" in lower:
+        return "https://images.pexels.com/photos/7406887/pexels-photo-7406887.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "jalebi" in lower:
+        return "https://images.pexels.com/photos/39852669/pexels-photo-39852669.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "kheer" in lower or "payasam" in lower:
+        return "https://images.pexels.com/photos/31109623/pexels-photo-31109623.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "halwa" in lower:
+        return "https://images.pexels.com/photos/20689161/pexels-photo-20689161.jpeg?auto=compress&cs=tinysrgb&w=600"
+    if "sweet" in lower or "ladoo" in lower or "kaju" in lower or "rasgulla" in lower:
+        return "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=600&q=80"
+    if "makhana" in lower or "sprout" in lower or "chana" in lower:
+        return "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80"
+    return "https://images.pexels.com/photos/8996219/pexels-photo-8996219.jpeg?auto=compress&cs=tinysrgb&w=600"
+
+# Enrich dataset with authentic image URLs
+for dish in INDIAN_FOOD_DATASET:
+    if "image_url" not in dish or not dish["image_url"]:
+        dish["image_url"] = get_dish_image_url(dish["name"], dish.get("category", ""))
+
 def search_indian_food(query: str) -> List[Dict[str, Any]]:
     """Filters dishes by name, category, or region containing the query string (supports English & Hindi)."""
     q = query.strip().lower()
