@@ -18,6 +18,6 @@ RUN pip install --no-cache-dir --user -r requirements.txt
 
 COPY --chown=user:user . .
 
-EXPOSE 7860
+EXPOSE 10000
 
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-7860}"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-10000}"]

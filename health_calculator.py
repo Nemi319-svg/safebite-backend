@@ -87,9 +87,9 @@ def calculate_health_score(
         "carrot", "gajar", "radish", "mooli", "spinach", "palak", "broccoli",
         "fresh fruit", "whole fruit", "raw fruit", "fresh vegetable", "raw vegetable"
     ]) and not any(p in full_text for p in [
-        "juice", "syrup", "jam", "jelly", "squash", "candy", "pie", "cake", "chip", "chips", "wafer"
+        "juice", "syrup", "jam", "jelly", "squash", "candy", "pie", "cake", "chip", "chips", "wafer", "snack", "fried", "powder", "seasoning"
     ])
-    is_fresh_fruit_or_veg = is_fresh_fruit_veg_text and not is_nut_butter and not is_nuts_seeds and not is_liquid_beverage
+    is_fresh_fruit_or_veg = is_fresh_fruit_veg_text and not is_nut_butter and not is_nuts_seeds and not is_liquid_beverage and cal <= 130.0 and f_total <= 4.0
 
     # =========================================================================
     # CASE A: NUT BUTTERS & SEED SPREADS (PEANUT BUTTER, ALMOND BUTTER, TAHINI)
@@ -450,6 +450,46 @@ def calculate_health_score(
             classification = "Healthy"
         else:
             classification = "Moderate"
+
+        # Authentic Indian Cuisine Detection & Calibration
+        indian_dishes = [
+            "jalebi", "gulab jamun", "samosa", "chole bhature", "butter naan", "vada pav",
+            "dal baati churma", "kachori", "medu vada", "malai kofta", "rasgulla", "ladoo",
+            "halwa", "kheer", "kaju katli", "pakora", "bhatura", "bhature", "sprout", "makhana",
+            "chaas", "buttermilk", "coconut water", "dal tadka", "palak paneer", "idli",
+            "chilla", "bhuna chana", "roasted chana", "tandoori chicken", "cucumber raita",
+            "dhokla", "dosa", "upma", "poha", "roti", "rajma", "biryani", "paneer butter masala",
+            "kadai paneer", "matar paneer", "shahi paneer", "pav bhaji", "gajak", "chikki", "til patti"
+        ]
+        is_traditional_seed_sweet = any(s in p_lower for s in ["gajak", "chikki", "til patti", "tilpatti", "til kut", "tilkut", "sesame brittle"])
+        is_indian = any(d in p_lower for d in indian_dishes) or "traditional indian" in full_text or "indian cuisine" in full_text
+        if is_traditional_seed_sweet:
+            # Traditional seed/nut jaggery sweet (Gajak, Chikki): Sesame seeds or peanuts provide natural plant protein,
+            # healthy unsaturated fats, calcium, iron, and fiber, while jaggery provides natural unrefined sweetness.
+            # Calibrated as Moderate (~50-58/100) with portion control advice.
+            base_sweet_score = 56.0 + (prot * 0.4) + (fib * 0.8) - (sug * 0.2)
+            score = max(46.0, min(62.0, base_sweet_score))
+            classification = "Moderate"
+            benefits.append("Rich in natural minerals (Calcium, Iron, Magnesium) and healthy plant unsaturated fats from sesame/peanuts")
+            concerns.append("Contains concentrated jaggery sugar (~45% by weight) — enjoy in moderation (1-2 pieces / 25-50g)")
+        elif is_indian and not is_nut_butter and not is_fresh_fruit_or_veg and not is_nuts_seeds:
+            if any(u in p_lower for u in [
+                "jalebi", "gulab jamun", "samosa", "chole bhature", "bhatura", "bhature",
+                "butter naan", "vada pav", "dal baati churma", "kachori", "medu vada",
+                "malai kofta", "rasgulla", "ladoo", "halwa", "kheer", "kaju katli", "pakora"
+            ]) or (f_total >= 18.0 and carb >= 45.0 and fib <= 2.0):
+                score = max(18.0, min(44.0, 40.0 - (f_total * 0.8) - (cal * 0.02)))
+                classification = "Unhealthy"
+            elif any(h in p_lower for h in [
+                "sprout", "makhana", "chaas", "buttermilk", "coconut water", "dal tadka",
+                "palak paneer", "idli", "chilla", "bhuna chana", "roasted chana", "tandoori chicken",
+                "cucumber raita", "dhokla"
+            ]) or (prot >= 10.0 and fib >= 5.0 and f_total <= 8.0):
+                score = max(75.0, min(96.0, 72.0 + (prot * 0.6) + (fib * 1.5) - (f_total * 0.3)))
+                classification = "Healthy"
+            else:
+                score = max(48.0, min(74.0, 68.0 + (prot * 0.4) + (fib * 0.8) - (f_total * 0.6) - (cal * 0.02)))
+                classification = "Moderate"
 
     # Diabetic Adjustment
     if is_diabetic:

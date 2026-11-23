@@ -1,89 +1,135 @@
 import datetime
-from typing import List, Optional
-from pydantic import BaseModel, Field
-from sqlalchemy import (
-    Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text
-)
-from sqlalchemy.orm import relationship
-from database import Base
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
+from pydantic import BaseModel, Field, model_validator
 
 # ============================================================================
-# SQLAlchemy ORM Models
+# MongoDB document models
 # ============================================================================
 
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(100), unique=True, index=True, nullable=False)
-    hashed_password = Column(String(255), nullable=False)
-    role = Column(String(20), default="user") # 'user' or 'admin'
-    age = Column(Integer, nullable=True)
-    height = Column(Float, nullable=True) # cm
-    weight = Column(Float, nullable=True) # kg
-    gender = Column(String(20), nullable=True)
-    is_diabetic = Column(Boolean, default=False)
-    email = Column(String(150), unique=True, index=True, nullable=True)
-    is_verified = Column(Boolean, default=False)
-    email_verified = Column(Boolean, default=False)
-    verification_code_hash = Column(String(255), nullable=True)
-    verification_expires_at = Column(DateTime, nullable=True)
-    verification_last_sent_at = Column(DateTime, nullable=True)
-    failed_verification_attempts = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-
-    scans = relationship("Scan", back_populates="user", cascade="all, delete-orphan")
-    saved_foods = relationship("SavedFood", back_populates="user", cascade="all, delete-orphan")
-
-
-class Scan(Base):
-    __tablename__ = "scans"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    product_name = Column(String(200), default="Food Product")
-    calories = Column(Float, nullable=True)
-    protein = Column(Float, nullable=True)
-    carbs = Column(Float, nullable=True)
-    fat = Column(Float, nullable=True)
-    sugar = Column(Float, nullable=True)
-    fiber = Column(Float, nullable=True)
-    sodium = Column(Float, nullable=True)
-    saturated_fat = Column(Float, nullable=True)
-    trans_fat = Column(Float, nullable=True)
-    ingredients = Column(Text, nullable=True)
-    health_score = Column(Float, default=70.0)
-    classification = Column(String(50), default="Moderate") # Healthy, Moderate, Unhealthy
-    analysis = Column(Text, nullable=True)
-    healthier_alternatives = Column(Text, nullable=True) # JSON or comma-separated string
-    benefits = Column(Text, nullable=True)
-    concerns = Column(Text, nullable=True)
-    image_path = Column(String(300), nullable=True)
-    scan_date = Column(DateTime, default=datetime.datetime.utcnow)
-
-    user = relationship("User", back_populates="scans")
+@dataclass
+class User:
+    id: Optional[int] = None
+    username: str = ""
+    hashed_password: str = ""
+    role: str = "user"
+    age: Optional[int] = None
+    height: Optional[float] = None
+    weight: Optional[float] = None
+    gender: Optional[str] = None
+    is_diabetic: bool = False
+    dietary_preference: Optional[str] = "None"
+    allergens: Optional[str] = ""
+    ingredient_exclusions: Optional[str] = ""
+    email: Optional[str] = None
+    is_verified: bool = False
+    email_verified: bool = False
+    verification_code_hash: Optional[str] = None
+    verification_expires_at: Optional[datetime.datetime] = None
+    verification_last_sent_at: Optional[datetime.datetime] = None
+    failed_verification_attempts: int = 0
+    created_at: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
+    referral_code: Optional[str] = None
 
 
-class SavedFood(Base):
-    __tablename__ = "saved_foods"
+@dataclass
+class Scan:
+    id: Optional[int] = None
+    user_id: int = 0
+    product_name: str = "Food Product"
+    calories: Optional[float] = None
+    protein: Optional[float] = None
+    carbs: Optional[float] = None
+    fat: Optional[float] = None
+    sugar: Optional[float] = None
+    fiber: Optional[float] = None
+    sodium: Optional[float] = None
+    saturated_fat: Optional[float] = None
+    trans_fat: Optional[float] = None
+    ingredients: Optional[str] = None
+    health_score: float = 70.0
+    classification: str = "Moderate"
+    analysis: Optional[str] = None
+    healthier_alternatives: Optional[str] = None
+    benefits: Optional[str] = None
+    concerns: Optional[str] = None
+    image_path: Optional[str] = None
+    scan_date: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    product_name = Column(String(200), default="Saved Food")
-    calories = Column(Float, nullable=True)
-    protein = Column(Float, nullable=True)
-    carbs = Column(Float, nullable=True)
-    fat = Column(Float, nullable=True)
-    sugar = Column(Float, nullable=True)
-    fiber = Column(Float, nullable=True)
-    sodium = Column(Float, nullable=True)
-    ingredients = Column(Text, nullable=True)
-    health_score = Column(Float, nullable=True)
-    analysis = Column(Text, nullable=True)
-    image_path = Column(String(300), nullable=True)
-    saved_date = Column(DateTime, default=datetime.datetime.utcnow)
 
-    user = relationship("User", back_populates="saved_foods")
+@dataclass
+class SavedFood:
+    id: Optional[int] = None
+    user_id: int = 0
+    product_name: str = "Saved Food"
+    calories: Optional[float] = None
+    protein: Optional[float] = None
+    carbs: Optional[float] = None
+    fat: Optional[float] = None
+    sugar: Optional[float] = None
+    fiber: Optional[float] = None
+    sodium: Optional[float] = None
+    ingredients: Optional[str] = None
+    health_score: Optional[float] = None
+    analysis: Optional[str] = None
+    image_path: Optional[str] = None
+    saved_date: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
+
+
+@dataclass
+class Subscription:
+    id: Optional[int] = None
+    user_id: int = 0
+    product_id: str = "safebite_premium_monthly"
+    purchase_token_hash: str = ""
+    order_id: Optional[str] = None
+    status: str = "ACTIVE"  # ACTIVE, EXPIRED, CANCELLED, PENDING, REVOKED
+    start_time: Optional[datetime.datetime] = None
+    expiry_time: Optional[datetime.datetime] = None
+    auto_renewing: bool = True
+    verified_at: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
+    last_checked_at: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
+
+
+@dataclass
+class Conversation:
+    id: Optional[int] = None
+    user_id: int = 0
+    title: str = "New Conversation"
+    created_at: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
+    updated_at: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
+
+
+@dataclass
+class ChatMessage:
+    id: Optional[int] = None
+    conversation_id: int = 0
+    user_id: int = 0
+    sender: str = "user"  # "user" or "assistant"
+    message: str = ""
+    scan_context: Optional[str] = None
+    created_at: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
+
+
+@dataclass
+class Coupon:
+    id: Optional[int] = None
+    code: str = ""
+    days_free: int = 30
+    max_redemptions: Optional[int] = None
+    expires_at: Optional[datetime.datetime] = None
+    active: bool = True
+    redeemed_count: int = 0
+    created_at: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
+
+
+@dataclass
+class CouponRedemption:
+    id: Optional[int] = None
+    user_id: int = 0
+    code: str = ""
+    redeemed_at: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
+    premium_until: Optional[datetime.datetime] = None
 
 
 # ============================================================================
@@ -121,6 +167,7 @@ class VerifyCodeResponse(BaseModel):
     message: str
     is_valid: bool = True
     username: Optional[str] = None
+    token: Optional[str] = None
 
 class VerifyEmailRequest(BaseModel):
     email: str
@@ -131,6 +178,7 @@ class VerifyEmailResponse(BaseModel):
     message: str
     is_valid: bool = True
     username: Optional[str] = None
+    token: Optional[str] = None
 
 class LoginRequest(BaseModel):
     username: Optional[str] = None
@@ -143,6 +191,10 @@ class GoogleAuthRequest(BaseModel):
     google_id: Optional[str] = None
     id_token: Optional[str] = None
 
+class SendWelcomeRequest(BaseModel):
+    email: str
+    username: Optional[str] = None
+
 class AuthResponse(BaseModel):
     status: str
     message: str
@@ -151,6 +203,7 @@ class AuthResponse(BaseModel):
     email: Optional[str] = None
     verification_required: Optional[bool] = False
     is_verified: Optional[bool] = True
+    token: Optional[str] = None
 
 class UserProfileRequest(BaseModel):
     username: str
@@ -159,6 +212,9 @@ class UserProfileRequest(BaseModel):
     weight: Optional[float] = None
     gender: Optional[str] = None
     is_diabetic: bool = False
+    dietary_preference: Optional[str] = "None"
+    allergens: Optional[str] = ""
+    ingredient_exclusions: Optional[str] = ""
 
 class UserProfileResponse(BaseModel):
     status: str
@@ -168,6 +224,9 @@ class UserProfileResponse(BaseModel):
     weight: Optional[float] = None
     gender: Optional[str] = None
     is_diabetic: bool = False
+    dietary_preference: Optional[str] = "None"
+    allergens: Optional[str] = ""
+    ingredient_exclusions: Optional[str] = ""
     bmi: Optional[float] = None
     bmi_category: Optional[str] = None
 
@@ -183,14 +242,49 @@ class ManualAnalysisRequest(BaseModel):
     ingredients: Optional[str] = ""
     username: Optional[str] = None
 
+class HealthScoreRequest(BaseModel):
+    product_name: str = Field(min_length=1, max_length=200)
+    calories: float = Field(ge=0)
+    protein: float = Field(ge=0)
+    carbs: float = Field(ge=0)
+    fat: float = Field(ge=0)
+    sugar: float = Field(default=0.0, ge=0)
+    fiber: float = Field(default=0.0, ge=0)
+    sodium: float = Field(default=0.0, ge=0)
+    ingredients: Optional[str] = ""
+    is_diabetic: bool = False
+
 class NutritionData(BaseModel):
     calories: float
     protein: float
     carbs: float
+    carbohydrates: Optional[float] = None
     fat: float
     sugar: Optional[float] = 0.0
     fiber: Optional[float] = 0.0
     sodium: Optional[float] = 0.0
+    saturated_fat: Optional[float] = None
+    trans_fat: Optional[float] = None
+    added_sugar: Optional[float] = None
+    serving_size: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def sync_carbs(cls, data):
+        if isinstance(data, dict):
+            if "carbohydrates" in data and data["carbohydrates"] is not None and "carbs" not in data:
+                data["carbs"] = float(data["carbohydrates"])
+            elif "carbs" in data and data["carbs"] is not None and ("carbohydrates" not in data or data["carbohydrates"] is None):
+                data["carbohydrates"] = float(data["carbs"])
+        return data
+
+class AllergenAlertItem(BaseModel):
+    name: str
+    match_type: str = "confirmed"  # "confirmed" or "possible"
+    matched_term: str = ""
+    is_user_allergy: bool = False
+    severity: str = "warning"  # "critical", "warning", "info"
+    message: str = ""
 
 class AnalysisResponse(BaseModel):
     status: str
@@ -205,6 +299,149 @@ class AnalysisResponse(BaseModel):
     healthier_alternatives: List[str] = []
     benefits: List[str] = []
     concerns: List[str] = []
+    image_url: Optional[str] = None
+    serving_size: Optional[str] = None
+    allergens: List[str] = []
+    allergy_alerts: List[AllergenAlertItem] = []
+    ingredient_completeness: Optional[str] = "complete"  # "complete", "partial", "unreadable", "unavailable"
+    allergen_free_disclaimer: Optional[str] = (
+        "The absence of an allergen alert does not guarantee a product is 100% allergen-free. "
+        "Cross-contamination may occur during manufacturing. Always inspect original packaging."
+    )
+    analysis_source: Optional[str] = "Gemini Vision AI"
+    analysis_mode: Optional[str] = "packaged"  # "packaged" or "food_object"
+    confidence: Optional[float] = None
+    food_category: Optional[str] = None
+    portion_size_estimated: Optional[bool] = None
+    serving_options: List[str] = []
+    alternative_candidates: List[str] = []
+    missing_fields: List[str] = []
+    nutrition_source: Optional[str] = None
+    is_estimate: Optional[bool] = False
+    warnings: List[str] = []
+
+    # Universal Food Image Recognition & Section 6 schema compatibility
+    food_mode: Optional[str] = None  # "packaged" | "unpackaged"
+    food_name: Optional[str] = None  # Canonical food title
+    identification_confidence: Optional[float] = None  # 0.0 - 1.0
+    serving_size_g: Optional[float] = None  # Gram weight
+    nutrition_is_estimated: Optional[bool] = None  # True for unpackaged/visual estimates
+    health_category: Optional[str] = None  # "Healthy" | "Moderate" | "Unhealthy"
+    data_confidence: Optional[str] = "medium"  # "high" | "medium" | "low"
+    explanation: Optional[str] = None  # Descriptive analysis text
+    recommendations: List[str] = []  # Nutrition & dietary recommendations
+    requires_user_confirmation: Optional[bool] = False  # Flag when low confidence or ambiguous
+
+    @model_validator(mode="before")
+    @classmethod
+    def populate_mode_and_aliases(cls, data):
+        if not isinstance(data, dict):
+            return data
+
+        # Food Mode
+        a_mode = data.get("analysis_mode") or "packaged"
+        f_mode = data.get("food_mode")
+        if not f_mode:
+            f_mode = "unpackaged" if a_mode == "food_object" else "packaged"
+        data["food_mode"] = f_mode
+        if not data.get("analysis_mode"):
+            data["analysis_mode"] = "food_object" if f_mode == "unpackaged" else "packaged"
+
+        # Food Name
+        name = data.get("product_name") or data.get("food_name") or ("Food Item" if f_mode == "unpackaged" else "Packaged Food")
+        data["product_name"] = name
+        data["food_name"] = data.get("food_name") or name
+
+        # Confidence
+        conf = data.get("confidence")
+        if conf is None:
+            conf = data.get("identification_confidence")
+        data["confidence"] = conf
+        data["identification_confidence"] = conf if conf is not None else (0.90 if f_mode == "packaged" else 0.85)
+
+        # Health Category / Classification
+        cls_val = data.get("classification") or data.get("health_category") or data.get("category") or "Moderate"
+        data["classification"] = cls_val
+        data["category"] = cls_val
+        data["health_category"] = cls_val
+
+        # Explanation / Analysis
+        expl = data.get("analysis") or data.get("explanation") or data.get("recommendation") or ""
+        data["analysis"] = expl
+        data["explanation"] = expl
+        data["recommendation"] = expl
+
+        # Recommendations / Healthier Alternatives
+        recs = data.get("recommendations") or data.get("healthier_alternatives") or []
+        data["recommendations"] = recs
+        data["healthier_alternatives"] = recs
+
+        # Estimate flag
+        is_est = data.get("is_estimate")
+        if is_est is None:
+            is_est = data.get("nutrition_is_estimated")
+        if is_est is None:
+            is_est = (f_mode == "unpackaged")
+        data["is_estimate"] = bool(is_est)
+        data["nutrition_is_estimated"] = bool(is_est)
+
+        # Grams from serving_size if missing
+        if data.get("serving_size_g") is None and data.get("serving_size"):
+            import re
+            m = re.search(r"(\d+(?:\.\d+)?)\s*g", str(data["serving_size"]))
+            if m:
+                try:
+                    data["serving_size_g"] = float(m.group(1))
+                except ValueError:
+                    pass
+
+        # Data Confidence
+        if not data.get("data_confidence"):
+            if f_mode == "packaged":
+                data["data_confidence"] = "high"
+            else:
+                c = data.get("identification_confidence") or 0.85
+                data["data_confidence"] = "high" if c >= 0.88 else ("medium" if c >= 0.70 else "low")
+
+        # Requires confirmation
+        if "requires_user_confirmation" not in data or data.get("requires_user_confirmation") is None:
+            c = data.get("identification_confidence") or 0.85
+            data["requires_user_confirmation"] = bool(c < 0.70 or data.get("data_confidence") == "low")
+
+        return data
+
+class LookupFoodRequest(BaseModel):
+    food_name: str = Field(min_length=1, max_length=200)
+    serving_size_g: Optional[float] = None
+    is_diabetic: Optional[bool] = False
+    username: Optional[str] = None
+
+class RecalculatePortionRequest(BaseModel):
+    product_name: str
+    base_calories: float
+    base_protein: float
+    base_carbs: float
+    base_fat: float
+    base_sugar: Optional[float] = 0.0
+    base_fiber: Optional[float] = 0.0
+    base_sodium: Optional[float] = 0.0
+    base_saturated_fat: Optional[float] = None
+    base_trans_fat: Optional[float] = None
+    ingredients: Optional[str] = ""
+    multiplier: float = 1.0
+    serving_size: str = "100g"
+    is_diabetic: Optional[bool] = False
+
+class HealthScoreResponse(BaseModel):
+    status: str
+    product_name: str
+    nutrition: NutritionData
+    health_score: float
+    classification: str
+    reasons: List[str] = []
+    benefits: List[str] = []
+    concerns: List[str] = []
+    healthier_alternatives: List[str] = []
 
 class BarcodeResponse(BaseModel):
     status: str
@@ -312,15 +549,36 @@ class DiabetesCheckResponse(BaseModel):
 class ChatMessageRequest(BaseModel):
     message: str
     username: Optional[str] = None
+    conversation_id: Optional[int] = None
+    scan_id: Optional[int] = None
+    scan_context: Optional[Dict[str, Any]] = None
 
 class ChatMessageResponse(BaseModel):
     status: str
     response: str
     model: Optional[str] = None
+    conversation_id: Optional[int] = None
+    title: Optional[str] = None
+    follow_up_suggestions: Optional[List[str]] = None
+
+class ConversationSummary(BaseModel):
+    id: int
+    title: str
+    created_at: str
+    updated_at: str
+    message_count: int = 0
+
+class ConversationDetailResponse(BaseModel):
+    id: int
+    title: str
+    created_at: str
+    updated_at: str
+    messages: List[Dict[str, Any]] = []
 
 class HealthCheckResponse(BaseModel):
     status: str
     message: str
+    database_connected: bool = False
     gemini_configured: bool = False
     groq_configured: bool = False # backwards compatibility
     ocr_ready: bool = True
@@ -397,3 +655,367 @@ class AdminHistoryResponse(BaseModel):
     total_users: int
     total_scans: int
     scans: List[ScanItem] = []
+
+class VerifySubscriptionRequest(BaseModel):
+    purchase_token: str
+    product_id: str = "safebite_premium_monthly"
+    package_name: str = "com.example.safebite"
+    order_id: Optional[str] = None
+
+class SubscriptionStatusResponse(BaseModel):
+    is_premium: bool
+    status: str
+    product_id: Optional[str] = None
+    order_id: Optional[str] = None
+    expiry_time: Optional[str] = None
+    auto_renewing: bool = False
+    message: str = ""
+    source: Optional[str] = None  # "play", "coupon", or None
+    premium_until: Optional[str] = None
+
+
+class CouponRedeemRequest(BaseModel):
+    code: str
+
+
+class CouponRedeemResponse(BaseModel):
+    success: bool
+    premium_until: Optional[str] = None
+    error_code: Optional[str] = None
+    message: str
+
+
+# ============================================================================
+# Universal Food Product Search & Health Analyzer Models
+# ============================================================================
+
+class ProductNutritionValues(BaseModel):
+    calories: Optional[float] = None
+    protein: Optional[float] = None
+    carbohydrates: Optional[float] = None
+    total_sugar: Optional[float] = None
+    added_sugar: Optional[float] = None
+    total_fat: Optional[float] = None
+    saturated_fat: Optional[float] = None
+    trans_fat: Optional[float] = None
+    sodium: Optional[float] = None
+    fiber: Optional[float] = None
+
+
+class ProductSummaryItem(BaseModel):
+    id: str
+    name: str
+    brand: str
+    category: str = "General"
+    barcode: Optional[str] = None
+    image_url: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+    health_score: Optional[float] = None
+    classification: Optional[str] = None  # Healthy, Moderate, Unhealthy
+    calories: Optional[float] = None
+    sugar: Optional[float] = None
+    protein: Optional[float] = None
+    fat: Optional[float] = None
+    sodium: Optional[float] = None
+    data_source: str = "SafeBite Indian Food Database"
+
+
+class ProductSearchResponse(BaseModel):
+    status: str = "success"
+    query: str
+    total: int
+    page: int = 1
+    page_size: int = 20
+    products: List[ProductSummaryItem] = []
+    suggestions: List[str] = []
+
+
+class ProductDetailResponse(BaseModel):
+    status: str = "success"
+    id: str
+    name: str
+    brand: str
+    barcode: Optional[str] = None
+    category: str = "General"
+    image_url: Optional[str] = None
+    ingredients: Optional[str] = None
+    serving_size: Optional[str] = None
+    nutrition_per_100g: ProductNutritionValues
+    nutrition_per_serving: Optional[ProductNutritionValues] = None
+    allergens: List[str] = []
+    additives: List[str] = []
+    additive_details: List[str] = []
+    fssai_warnings: List[str] = []
+    health_score: Optional[float] = None
+    classification: Optional[str] = None  # Healthy, Moderate, Unhealthy
+    positive_points: List[str] = []
+    negative_points: List[str] = []
+    healthier_alternatives: List[str] = []
+    data_source: str = "SafeBite Indian Food Database"
+    last_updated: Optional[str] = None
+    is_data_insufficient: bool = False
+
+
+class ProductHealthAnalysisResponse(BaseModel):
+    status: str = "success"
+    product_id: str
+    product_name: str
+    health_score: float
+    classification: str  # Healthy, Moderate, Unhealthy
+    positive_points: List[str] = []
+    negative_points: List[str] = []
+    fssai_warnings: List[str] = []
+    additive_information: List[str] = []
+    allergen_warnings: List[str] = []
+    healthier_alternatives: List[str] = []
+    personalized_suitability: Dict[str, Any] = {}
+    medical_disclaimer: str = (
+        "SafeBite provides nutritional education and transparent health scores based on FSSAI & international guidance. "
+        "This evaluation is for informational purposes only and does not constitute medical advice."
+    )
+
+
+class ProductCompareItem(BaseModel):
+    id: str
+    name: str
+    brand: str
+    category: Optional[str] = None
+    image_url: Optional[str] = None
+    health_score: float
+    classification: str
+    calories: Optional[float] = None
+    protein: Optional[float] = None
+    carbohydrates: Optional[float] = None
+    total_sugar: Optional[float] = None
+    total_fat: Optional[float] = None
+    saturated_fat: Optional[float] = None
+    sodium: Optional[float] = None
+    fiber: Optional[float] = None
+    favorable_points: List[str] = []
+
+
+class ProductCompareIdsRequest(BaseModel):
+    product_ids: List[str] = Field(..., min_length=1, max_length=5)
+
+
+class ProductMultiCompareResponse(BaseModel):
+    status: str = "success"
+    products: List[ProductCompareItem]
+    healthier_choice_id: Optional[str] = None
+    healthier_choice_name: Optional[str] = None
+    comparison_summary: str
+    key_differences: List[str] = []
+
+
+class AdminAddProductRequest(BaseModel):
+    admin_secret: Optional[str] = None
+    id: Optional[str] = None
+    name: str
+    brand: str
+    barcode: Optional[str] = None
+    category: str = "General"
+    image_url: Optional[str] = None
+    ingredients: Optional[str] = None
+    serving_size: Optional[str] = None
+    calories: Optional[float] = None
+    protein: Optional[float] = None
+    carbohydrates: Optional[float] = None
+    total_sugar: Optional[float] = None
+    added_sugar: Optional[float] = None
+    total_fat: Optional[float] = None
+    saturated_fat: Optional[float] = None
+    trans_fat: Optional[float] = None
+    sodium: Optional[float] = None
+    fiber: Optional[float] = None
+    allergens: Optional[List[str]] = None
+    additives: Optional[List[str]] = None
+
+
+# ============================================================================
+# Referral, Sync, Feedback & Moderation Models
+# ============================================================================
+
+@dataclass
+class ReferralRecord:
+    id: Optional[int] = None
+    referrer_user_id: int = 0
+    referee_user_id: int = 0
+    referral_code: str = ""
+    created_at: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
+
+
+@dataclass
+class UserSyncBackup:
+    id: Optional[int] = None
+    user_id: int = 0
+    history_json: str = "[]"
+    saved_foods_json: str = "[]"
+    profiles_json: str = "[]"
+    settings_json: str = "{}"
+    device_id: Optional[str] = None
+    updated_at: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
+
+
+@dataclass
+class FeedbackItem:
+    id: Optional[int] = None
+    user_id: Optional[int] = None
+    feedback_type: str = "general"
+    message: str = ""
+    rating: Optional[int] = None
+    screenshot_path: Optional[str] = None
+    app_version: Optional[str] = None
+    os_version: Optional[str] = None
+    device_model: Optional[str] = None
+    created_at: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
+
+
+@dataclass
+class ProductSubmission:
+    id: Optional[int] = None
+    barcode: str = ""
+    product_name: str = ""
+    brand: Optional[str] = None
+    category: Optional[str] = None
+    serving_size: Optional[str] = None
+    calories: Optional[float] = None
+    protein: Optional[float] = None
+    carbohydrates: Optional[float] = None
+    total_sugar: Optional[float] = None
+    total_fat: Optional[float] = None
+    saturated_fat: Optional[float] = None
+    sodium: Optional[float] = None
+    fiber: Optional[float] = None
+    ingredients: Optional[str] = None
+    submitted_by_user_id: Optional[int] = None
+    submission_count: int = 1
+    is_approved: bool = False
+    created_at: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
+    updated_at: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
+
+
+@dataclass
+class ProductReport:
+    id: Optional[int] = None
+    barcode: str = ""
+    user_id: Optional[int] = None
+    reason: str = ""
+    details: Optional[str] = None
+    status: str = "pending"
+    created_at: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
+
+
+class ReferralInfoResponse(BaseModel):
+    referral_code: str
+    referral_link: str
+    total_referrals: int
+    days_earned: int
+    max_referrals: int = 20
+
+
+class ApplyReferralRequest(BaseModel):
+    referral_code: str
+
+
+class ApplyReferralResponse(BaseModel):
+    status: str = "success"
+    message: str
+    days_granted: int = 7
+    premium_until: Optional[str] = None
+
+
+class CloudSyncBackupRequest(BaseModel):
+    history: List[Dict[str, Any]] = []
+    saved_foods: List[Dict[str, Any]] = []
+    profiles: Optional[List[Dict[str, Any]]] = None
+    settings: Optional[Dict[str, Any]] = None
+    device_id: Optional[str] = None
+
+
+class CloudSyncBackupResponse(BaseModel):
+    status: str = "success"
+    message: str
+    synced_at: str
+    history_count: int
+    saved_foods_count: int
+
+
+class CloudSyncRestoreResponse(BaseModel):
+    status: str = "success"
+    synced_at: Optional[str] = None
+    history: List[Dict[str, Any]] = []
+    saved_foods: List[Dict[str, Any]] = []
+    profiles: List[Dict[str, Any]] = []
+    settings: Dict[str, Any] = {}
+
+
+class SubmitFeedbackRequest(BaseModel):
+    feedback_type: str = "general"
+    message: str
+    rating: Optional[int] = None
+    screenshot_base64: Optional[str] = None
+    app_version: Optional[str] = None
+    os_version: Optional[str] = None
+    device_model: Optional[str] = None
+
+
+class SubmitFeedbackResponse(BaseModel):
+    status: str = "success"
+    message: str
+    feedback_id: int
+
+
+class SubmitProductLabelRequest(BaseModel):
+    barcode: str
+    product_name: str
+    brand: Optional[str] = None
+    category: Optional[str] = None
+    serving_size: Optional[str] = None
+    calories: Optional[float] = None
+    protein: Optional[float] = None
+    carbohydrates: Optional[float] = None
+    total_sugar: Optional[float] = None
+    total_fat: Optional[float] = None
+    saturated_fat: Optional[float] = None
+    sodium: Optional[float] = None
+    fiber: Optional[float] = None
+    ingredients: Optional[str] = None
+    label_image_base64: Optional[str] = None
+
+
+class SubmitProductLabelResponse(BaseModel):
+    status: str = "success"
+    message: str
+    submission_id: int
+    is_approved: bool
+    match_count: int
+    community_verified: bool = False
+
+
+class ReportProductRequest(BaseModel):
+    barcode: str
+    reason: str
+    details: Optional[str] = None
+
+
+class ReportProductResponse(BaseModel):
+    status: str = "success"
+    message: str
+    report_id: int
+
+
+class AdminModerationItem(BaseModel):
+    id: int
+    barcode: str
+    product_name: str
+    brand: Optional[str] = None
+    category: Optional[str] = None
+    submission_count: int
+    is_approved: bool
+    created_at: str
+
+
+class AdminModerationListResponse(BaseModel):
+    status: str = "success"
+    submissions: List[AdminModerationItem] = []
+    total: int = 0
