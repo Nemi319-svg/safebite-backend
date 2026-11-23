@@ -522,12 +522,15 @@ def _handle_resend_verification(email: str, db: MongoStore) -> ResendVerificatio
         )
         db.insert(user)
 
-    if user.email_verified and user.is_verified:
-        return ResendVerificationResponse(status="success", message="Email is already verified. You can log in directly.")
-
     now = datetime.datetime.utcnow()
-    if user.verification_last_sent_at:
-        seconds_passed = (now - user.verification_last_sent_at).total_seconds()
+    last_sent = user.verification_last_sent_at
+    if isinstance(last_sent, str):
+        try:
+            last_sent = datetime.datetime.fromisoformat(last_sent)
+        except Exception:
+            last_sent = None
+    if last_sent:
+        seconds_passed = (now - last_sent).total_seconds()
         if seconds_passed < VERIFICATION_RESEND_COOLDOWN_SECONDS:
             remaining = int(VERIFICATION_RESEND_COOLDOWN_SECONDS - seconds_passed)
             raise HTTPException(
@@ -572,14 +575,6 @@ def _handle_verify_email(email: str, code: str, db: MongoStore) -> VerifyEmailRe
     if not user:
         raise HTTPException(status_code=404, detail="No account found for this email address.")
 
-    if user.email_verified and user.is_verified:
-        return VerifyEmailResponse(
-            status="success",
-            message="Email is already verified. You can log in.",
-            is_valid=True,
-            username=user.username
-        )
-
     # Check attempt rate limit and invalidate code after 5 attempts
     if (user.failed_verification_attempts or 0) >= 5:
         user.verification_code_hash = None
@@ -593,7 +588,13 @@ def _handle_verify_email(email: str, code: str, db: MongoStore) -> VerifyEmailRe
 
     # Check expiry
     now = datetime.datetime.utcnow()
-    if user.verification_expires_at and now > user.verification_expires_at:
+    expires_at = user.verification_expires_at
+    if isinstance(expires_at, str):
+        try:
+            expires_at = datetime.datetime.fromisoformat(expires_at)
+        except Exception:
+            expires_at = None
+    if expires_at and now > expires_at:
         raise HTTPException(
             status_code=400,
             detail="Verification code has expired. Please request a new code."
