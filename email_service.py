@@ -75,24 +75,42 @@ def _dispatch_email(
     try:
         # 1. Primary HTTPS Webhook dispatch (Port 443 HTTPS, works on Render / Cloud without port 587 block)
         default_webhook = "https://script.google.com/macros/s/AKfycbzVutgjGn_ERJOkeTCh1Qg0ztsiy4n1l9_fqenxCh37yh1R6mnwjZYIGp5wFFptT8Yz/exec"
-        webhook_url = os.getenv("GMAIL_WEBHOOK_URL", default_webhook).strip()
+        raw_env_webhook = (os.getenv("GMAIL_WEBHOOK_URL") or "").strip()
+        webhook_url = raw_env_webhook if (raw_env_webhook.startswith("https://") and len(raw_env_webhook) > 25) else default_webhook
         if webhook_url:
+            payload = {
+                "email": clean_target,
+                "subject": subject,
+                "text": plain_text,
+                "html": html_content
+            }
             try:
                 import requests
-                payload = {
-                    "email": clean_target,
-                    "subject": subject,
-                    "text": plain_text,
-                    "html": html_content
-                }
                 resp = requests.post(webhook_url, json=payload, timeout=15, allow_redirects=True)
                 if resp.status_code in (200, 302):
                     logger.info(f"{log_tag} dispatched via Webhook to: {clean_target}")
                     return True, None
                 else:
-                    logger.warning(f"Webhook dispatch returned {resp.status_code}: {resp.text}, falling back...")
+                    logger.warning(f"Webhook dispatch returned {resp.status_code}: {resp.text}, trying urllib...")
             except Exception as we:
-                logger.warning(f"Webhook dispatch failed: {we}, falling back...")
+                logger.warning(f"Webhook dispatch via requests failed: {we}, trying urllib...")
+
+            # Backup HTTPS dispatch via standard library urllib
+            try:
+                import urllib.request
+                import json
+                req_data = json.dumps(payload).encode("utf-8")
+                req = urllib.request.Request(
+                    webhook_url,
+                    data=req_data,
+                    headers={"Content-Type": "application/json", "User-Agent": "SafeBite/1.0"}
+                )
+                with urllib.request.urlopen(req, timeout=15) as uresp:
+                    if uresp.status in (200, 302):
+                        logger.info(f"{log_tag} dispatched via urllib Webhook to: {clean_target}")
+                        return True, None
+            except Exception as ue:
+                logger.warning(f"urllib Webhook failed: {ue}, falling back to Brevo/SMTP...")
 
         # 2. Alternative HTTPS API: Brevo REST API (HTTPS Port 443)
         brevo_key = os.getenv("BREVO_API_KEY", "").strip()

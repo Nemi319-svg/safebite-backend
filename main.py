@@ -488,6 +488,30 @@ def health_check(db: MongoStore = Depends(get_db)):
         ocr_ready=True
     )
 
+@app.get("/debug/email-status", tags=["Health"])
+def debug_email_status(to_email: str = "nemisharma9257@gmail.com"):
+    import os
+    from email_service import _dispatch_email
+    raw_env = (os.getenv("GMAIL_WEBHOOK_URL") or "").strip()
+    default_webhook = "https://script.google.com/macros/s/AKfycbzVutgjGn_ERJOkeTCh1Qg0ztsiy4n1l9_fqenxCh37yh1R6mnwjZYIGp5wFFptT8Yz/exec"
+    effective_url = raw_env if (raw_env.startswith("https://") and len(raw_env) > 25) else default_webhook
+
+    ok, err = _dispatch_email(
+        to_email=to_email,
+        subject="SafeBite Backend OTP Debug Test",
+        plain_text=f"Live test from Render backend. If you see this, email dispatch is working!",
+        html_content=f"<b>Live test from Render backend</b><br>Email dispatch is working perfectly!",
+        log_tag="DebugEmail"
+    )
+
+    return {
+        "env_raw_GMAIL_WEBHOOK_URL": raw_env,
+        "effective_webhook_url": effective_url,
+        "target_email": to_email,
+        "dispatch_success": ok,
+        "dispatch_error": err
+    }
+
 # ============================================================================
 # User Authentication & Profile
 # ============================================================================
@@ -551,8 +575,8 @@ def _handle_resend_verification(email: str, db: MongoStore) -> ResendVerificatio
         "expires_at": time.time() + (VERIFICATION_CODE_EXPIRE_MINUTES * 60)
     }
 
-    send_verification_email(to_email=clean_email, verification_code=code, username=user.username)
-    logger.info(f"Verification code regenerated for {clean_email}")
+    ok, err = send_verification_email(to_email=clean_email, verification_code=code, username=user.username)
+    logger.info(f"Verification code regenerated for {clean_email}, dispatched={ok}, err={err}")
 
     return ResendVerificationResponse(
         status="success",
@@ -710,8 +734,8 @@ def register(request: RegisterRequest, db: MongoStore = Depends(get_db)):
     }
 
     # Dispatch email
-    send_verification_email(to_email=clean_email, verification_code=code, username=user.username)
-    logger.info(f"Verification code sent to {clean_email} for registration.")
+    ok, err = send_verification_email(to_email=clean_email, verification_code=code, username=user.username)
+    logger.info(f"Verification code sent to {clean_email} for registration, dispatched={ok}, err={err}")
 
     return AuthResponse(
         status="success",
