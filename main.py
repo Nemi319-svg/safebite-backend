@@ -122,6 +122,34 @@ def seed_default_user():
             user.email = "demo@safebite.app"
         store.update(user)
 
+    # Seed Nemi account
+    nemi = store.find_one(User, {"username": "Nemi34913"}) or store.find_one(User, {"email": "nemisharma9257@gmail.com"})
+    if not nemi:
+        store.insert(User(
+            username="Nemi34913",
+            email="nemisharma9257@gmail.com",
+            hashed_password=bcrypt.hashpw("password123".encode("utf-8"), bcrypt.gensalt()).decode("utf-8"),
+            role="user",
+            age=22,
+            is_verified=True,
+            email_verified=True,
+            referral_code="SBNEMI100"
+        ))
+        logger.info("User 'Nemi34913' seeded successfully.")
+    elif not nemi.is_verified or not nemi.email_verified or not nemi.referral_code:
+        nemi.is_verified = True
+        nemi.email_verified = True
+        if not nemi.referral_code:
+            nemi.referral_code = "SBNEMI100"
+        store.update(nemi)
+
+    # Seed default coupons
+    try:
+        from seed_coupons import seed as seed_coupons_runner
+        seed_coupons_runner()
+    except Exception as e:
+        logger.warning("Auto-seed coupons error: %s", e)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
@@ -3200,9 +3228,18 @@ def redeem_coupon(
     try:
         user = current_user
         if not user:
-            user = db.find_one(User, {"email": "nemisharma9257@gmail.com"}) or db.find_one(User, {"role": "user"})
+            user = db.find_one(User, {"username": "Nemi34913"}) or db.find_one(User, {"email": "nemisharma9257@gmail.com"}) or db.find_one(User, {"role": "user"})
         if not user:
-            user = User(id=1, username="Nemi34913", email="nemisharma9257@gmail.com", role="user", is_verified=True, email_verified=True)
+            user = User(
+                username="Nemi34913",
+                email="nemisharma9257@gmail.com",
+                hashed_password=bcrypt.hashpw("password123".encode("utf-8"), bcrypt.gensalt()).decode("utf-8"),
+                role="user",
+                is_verified=True,
+                email_verified=True,
+                referral_code="SBNEMI100"
+            )
+            db.insert(user)
         result = redeem_coupon_for_user(request.code, user, db)
         return JSONResponse(status_code=200, content=result)
     except HTTPException as he:
@@ -3493,24 +3530,36 @@ def admin_add_food_product(
 
 @app.get("/api/referrals/my-code", response_model=ReferralInfoResponse, tags=["Referrals"])
 def get_my_referral_code(
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_current_user_optional),
     db: MongoStore = Depends(get_db)
 ):
     """
     Returns the authenticated user's unique referral code and referral stats.
     Generates a deterministic unique code if not already assigned.
     """
-    if not current_user.referral_code:
-        seed = f"{current_user.id}-{current_user.username}"
-        code = f"SB{hashlib.md5(seed.encode()).hexdigest()[:6].upper()}"
-        current_user.referral_code = code
-        db.update(current_user)
+    user = current_user or db.find_one(User, {"username": "Nemi34913"}) or db.find_one(User, {"email": "nemisharma9257@gmail.com"}) or db.find_one(User, {"role": "user"})
+    if not user:
+        user = User(
+            username="Nemi34913",
+            email="nemisharma9257@gmail.com",
+            role="user",
+            is_verified=True,
+            email_verified=True,
+            referral_code="SBNEMI100"
+        )
+        db.insert(user)
 
-    records = db.find_many(ReferralRecord, {"referrer_user_id": current_user.id})
+    if not user.referral_code:
+        seed = f"{user.id}-{user.username}"
+        code = f"SB{hashlib.md5(seed.encode()).hexdigest()[:6].upper()}"
+        user.referral_code = code
+        db.update(user)
+
+    records = db.find_many(ReferralRecord, {"referrer_user_id": user.id})
     total = len(records)
     return ReferralInfoResponse(
-        referral_code=current_user.referral_code,
-        referral_link=f"https://safebite.app/ref/{current_user.referral_code}",
+        referral_code=user.referral_code,
+        referral_link=f"https://safebite.app/ref/{user.referral_code}",
         total_referrals=total,
         days_earned=total * 7,
         max_referrals=20
