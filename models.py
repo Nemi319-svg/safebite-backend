@@ -157,6 +157,7 @@ class ResendVerificationRequest(BaseModel):
 class ResendVerificationResponse(BaseModel):
     status: str
     message: str
+    demo_code: Optional[str] = None
 
 class VerifyCodeRequest(BaseModel):
     email: str

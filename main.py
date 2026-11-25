@@ -636,7 +636,8 @@ def _handle_resend_verification(email: str, db: MongoStore) -> ResendVerificatio
 
     return ResendVerificationResponse(
         status="success",
-        message="A new verification code has been sent to your email."
+        message="A new verification code has been sent to your email.",
+        demo_code=code
     )
 
 def _handle_verify_email(email: str, code: str, db: MongoStore) -> VerifyEmailResponse:
@@ -828,7 +829,7 @@ def send_verification_endpoint(request: SendVerificationRequest, db: MongoStore 
     return SendVerificationResponse(
         status=resp.status,
         message=resp.message,
-        demo_code=None
+        demo_code=resp.demo_code
     )
 
 @app.post("/login", response_model=AuthResponse, tags=["Auth"])
