@@ -11,13 +11,13 @@ logger = logging.getLogger("SafeBiteEmailService")
 def get_smtp_config():
     host = os.getenv("SMTP_HOST", "smtp.gmail.com").strip()
     try:
-        port = int(os.getenv("SMTP_PORT", "587").strip())
+        port = int(os.getenv("SMTP_PORT", "465").strip())
     except Exception:
-        port = 587
-    user = os.getenv("SMTP_USERNAME", "").strip()
+        port = 465
+    user = os.getenv("SMTP_USERNAME", "safebitefoodanalyzer@gmail.com").strip()
     # Strip spaces in case user passes Google 16-char App Password formatted as 'xxxx xxxx xxxx xxxx'
-    pw = os.getenv("SMTP_PASSWORD", "").replace(" ", "").strip()
-    sender = os.getenv("EMAIL_FROM", f"SafeBite <{user}>" if user else "no-reply@safebite.app").strip()
+    pw = os.getenv("SMTP_PASSWORD", "ftsaumbhavgzzcaq").replace(" ", "").strip()
+    sender = os.getenv("EMAIL_FROM", f"SafeBite <{user}>").strip()
     try:
         expire_min = int(os.getenv("VERIFICATION_CODE_EXPIRE_MINUTES", "10"))
     except Exception:
@@ -29,10 +29,10 @@ def get_smtp_config():
     return host, port, user, pw, sender, expire_min, cooldown_sec
 
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USERNAME = os.getenv("SMTP_USERNAME", "").strip()
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "").replace(" ", "").strip()
-EMAIL_FROM = os.getenv("EMAIL_FROM", f"SafeBite <{SMTP_USERNAME}>" if SMTP_USERNAME else "no-reply@safebite.app")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "465"))
+SMTP_USERNAME = os.getenv("SMTP_USERNAME", "safebitefoodanalyzer@gmail.com").strip()
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "ftsaumbhavgzzcaq").replace(" ", "").strip()
+EMAIL_FROM = os.getenv("EMAIL_FROM", f"SafeBite <{SMTP_USERNAME}>")
 VERIFICATION_CODE_EXPIRE_MINUTES = int(os.getenv("VERIFICATION_CODE_EXPIRE_MINUTES", "10"))
 VERIFICATION_RESEND_COOLDOWN_SECONDS = int(os.getenv("VERIFICATION_RESEND_COOLDOWN_SECONDS", "30"))
 
@@ -73,51 +73,48 @@ def _dispatch_email(
         return True, None
 
     try:
-        # 1. Primary HTTPS Webhook dispatch (Port 443 HTTPS, works on Render / Cloud without port 587 block)
-        default_webhook = "https://script.google.com/macros/s/AKfycbzVutgjGn_ERJOkeTCh1Qg0ztsiy4n1l9_fqenxCh37yh1R6mnwjZYIGp5wFFptT8Yz/exec"
-        raw_env_webhook = (os.getenv("GMAIL_WEBHOOK_URL") or "").strip()
-        webhook_url = raw_env_webhook if (raw_env_webhook.startswith("https://") and len(raw_env_webhook) > 25) else default_webhook
-        if webhook_url:
-            payload = {
-                "email": clean_target,
-                "subject": subject,
-                "text": plain_text,
-                "html": html_content
-            }
-            try:
-                import requests
-                resp = requests.post(webhook_url, json=payload, timeout=15, allow_redirects=True)
-                if resp.status_code in (200, 302):
-                    logger.info(f"{log_tag} dispatched via Webhook to: {clean_target}")
-                    return True, None
-                else:
-                    logger.warning(f"Webhook dispatch returned {resp.status_code}: {resp.text}, trying urllib...")
-            except Exception as we:
-                logger.warning(f"Webhook dispatch via requests failed: {we}, trying urllib...")
+        # 1. Primary: Direct Authenticated SMTP (Port 465 SSL, then Port 587 STARTTLS)
+        # Using official SafeBite Gmail credentials - fast, direct, and avoids Webhook silent drops
+        host, _, user, pw, sender, _, _ = get_smtp_config()
+        if host and user and pw:
+            message = MIMEMultipart("alternative")
+            message["Subject"] = subject
+            message["From"] = sender
+            message["To"] = clean_target
+            message.attach(MIMEText(plain_text, "plain", "utf-8"))
+            message.attach(MIMEText(html_content, "html", "utf-8"))
 
-            # Backup HTTPS dispatch via standard library urllib
+            # Try Port 465 (SSL) first - fastest & most reliable on cloud instances
             try:
-                import urllib.request
-                import json
-                req_data = json.dumps(payload).encode("utf-8")
-                req = urllib.request.Request(
-                    webhook_url,
-                    data=req_data,
-                    headers={"Content-Type": "application/json", "User-Agent": "SafeBite/1.0"}
-                )
-                with urllib.request.urlopen(req, timeout=15) as uresp:
-                    if uresp.status in (200, 302):
-                        logger.info(f"{log_tag} dispatched via urllib Webhook to: {clean_target}")
-                        return True, None
-            except Exception as ue:
-                logger.warning(f"urllib Webhook failed: {ue}, falling back to Brevo/SMTP...")
+                context = ssl.create_default_context()
+                with smtplib.SMTP_SSL(host, 465, context=context, timeout=12) as server:
+                    server.login(user, pw)
+                    server.sendmail(sender, [clean_target], message.as_string())
+                logger.info(f"{log_tag} successfully sent via SMTPS (Port 465) to: {clean_target}")
+                return True, None
+            except Exception as ssl_err:
+                logger.warning(f"SMTPS (Port 465) failed: {ssl_err}, attempting STARTTLS (Port 587)...")
+
+            # Try Port 587 (STARTTLS)
+            try:
+                context = ssl.create_default_context()
+                with smtplib.SMTP(host, 587, timeout=12) as server:
+                    server.ehlo()
+                    server.starttls(context=context)
+                    server.ehlo()
+                    server.login(user, pw)
+                    server.sendmail(sender, [clean_target], message.as_string())
+                logger.info(f"{log_tag} successfully sent via SMTP STARTTLS (Port 587) to: {clean_target}")
+                return True, None
+            except Exception as tls_err:
+                logger.warning(f"SMTP STARTTLS (Port 587) failed: {tls_err}, trying Brevo/Webhook fallback...")
 
         # 2. Alternative HTTPS API: Brevo REST API (HTTPS Port 443)
         brevo_key = os.getenv("BREVO_API_KEY", "").strip()
         if brevo_key:
             try:
                 import requests
-                sender_email = os.getenv("EMAIL_FROM_ADDRESS", os.getenv("SMTP_USERNAME", "no-reply@safebite.app")).strip()
+                sender_email = os.getenv("EMAIL_FROM_ADDRESS", user if user else "no-reply@safebite.app").strip()
                 brevo_payload = {
                     "sender": {"name": "SafeBite", "email": sender_email},
                     "to": [{"email": clean_target}],
@@ -138,38 +135,30 @@ def _dispatch_email(
             except Exception as be:
                 logger.warning(f"Brevo API failed: {be}")
 
-        # 3. Standard SMTP (Port 587 / 465) fallback
-        if is_smtp_configured():
+        # 3. Tertiary Fallback: Google Apps Script Webhook
+        raw_env_webhook = (os.getenv("GMAIL_WEBHOOK_URL") or "").strip()
+        if raw_env_webhook.startswith("https://") and len(raw_env_webhook) > 25:
+            payload = {
+                "email": clean_target,
+                "subject": subject,
+                "text": plain_text,
+                "html": html_content
+            }
             try:
-                host, port, user, pw, sender, _, _ = get_smtp_config()
-
-                message = MIMEMultipart("alternative")
-                message["Subject"] = subject
-                message["From"] = sender
-                message["To"] = clean_target
-
-                message.attach(MIMEText(plain_text, "plain", "utf-8"))
-                message.attach(MIMEText(html_content, "html", "utf-8"))
-
-                context = ssl.create_default_context()
-                with smtplib.SMTP(host, port, timeout=12) as server:
-                    server.ehlo()
-                    server.starttls(context=context)
-                    server.ehlo()
-                    server.login(user, pw)
-                    server.sendmail(sender, [clean_target], message.as_string())
-
-                logger.info(f"{log_tag} successfully sent via SMTP to: {clean_target}")
-                return True, None
-            except Exception as se:
-                logger.warning(f"SMTP dispatch failed: {se}")
+                import requests
+                resp = requests.post(raw_env_webhook, json=payload, timeout=15, allow_redirects=True)
+                if resp.status_code in (200, 302):
+                    logger.info(f"{log_tag} dispatched via Webhook to: {clean_target}")
+                    return True, None
+            except Exception as we:
+                logger.warning(f"Webhook dispatch failed: {we}")
 
         if is_test_env:
             logger.info(f"Test environment active. Simulating {log_tag} dispatch for {clean_target}")
             return True, None
 
-        logger.warning(f"No email provider is configured or available to deliver {log_tag} to {clean_target}")
-        return False, "Email service is not configured on the server. Please configure SMTP_USERNAME and SMTP_PASSWORD."
+        logger.warning(f"All email dispatch methods failed for {log_tag} to {clean_target}")
+        return False, "Failed to send email. Please try again later."
 
     except Exception as e:
         logger.error(f"Failed to send {log_tag} to {clean_target}: {e}")

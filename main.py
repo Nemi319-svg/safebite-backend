@@ -3330,7 +3330,7 @@ def get_subscription_status(
             is_premium=True,
             status="ACTIVE",
             product_id=f"safebite_coupon_{redemption.code.lower()}",
-            order_id=f"COUPON-{redemption.code}-{current_user.id}",
+            order_id=f"COUPON-{redemption.code}-{user.id}",
             expiry_time=coupon_expiry.isoformat(),
             auto_renewing=False,
             source="coupon",
