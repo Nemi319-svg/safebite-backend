@@ -518,24 +518,52 @@ def health_check(db: MongoStore = Depends(get_db)):
 
 @app.get("/debug/email-status", tags=["Health"])
 def debug_email_status(to_email: str = "nemisharma9257@gmail.com"):
-    import os
-    from email_service import _dispatch_email
-    raw_env = (os.getenv("GMAIL_WEBHOOK_URL") or "").strip()
-    default_webhook = "https://script.google.com/macros/s/AKfycbzVutgjGn_ERJOkeTCh1Qg0ztsiy4n1l9_fqenxCh37yh1R6mnwjZYIGp5wFFptT8Yz/exec"
-    effective_url = raw_env if (raw_env.startswith("https://") and len(raw_env) > 25) else default_webhook
+    import os, socket, smtplib, ssl
+    from email_service import _dispatch_email, get_smtp_config
+
+    host, _, user, pw, sender, _, _ = get_smtp_config()
+
+    # Test raw socket to 465
+    sock465_err = None
+    try:
+        s465 = socket.create_connection(("smtp.gmail.com", 465), timeout=5)
+        s465.close()
+    except Exception as e:
+        sock465_err = str(e)
+
+    # Test raw socket to 587
+    sock587_err = None
+    try:
+        s587 = socket.create_connection(("smtp.gmail.com", 587), timeout=5)
+        s587.close()
+    except Exception as e:
+        sock587_err = str(e)
+
+    # Test SMTPS login
+    smtp_err = None
+    if not sock465_err:
+        try:
+            ctx = ssl.create_default_context()
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ctx, timeout=8) as s:
+                s.login(user, pw)
+        except Exception as e:
+            smtp_err = str(e)
 
     ok, err = _dispatch_email(
         to_email=to_email,
-        subject="SafeBite Backend OTP Debug Test",
-        plain_text=f"Live test from Render backend. If you see this, email dispatch is working!",
-        html_content=f"<b>Live test from Render backend</b><br>Email dispatch is working perfectly!",
+        subject="SafeBite Live OTP Delivery Test",
+        plain_text="Live OTP test from SafeBite backend.",
+        html_content="<b>Live OTP test from SafeBite backend.</b>",
         log_tag="DebugEmail"
     )
 
     return {
-        "env_raw_GMAIL_WEBHOOK_URL": raw_env,
-        "effective_webhook_url": effective_url,
         "target_email": to_email,
+        "sock465_accessible": sock465_err is None,
+        "sock465_error": sock465_err,
+        "sock587_accessible": sock587_err is None,
+        "sock587_error": sock587_err,
+        "smtp_login_error": smtp_err,
         "dispatch_success": ok,
         "dispatch_error": err
     }
